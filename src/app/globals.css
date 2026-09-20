@@ -1,26 +1,125 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --paper: #f5f2f7;
+  --paper-strong: #fbf9fc;
+  --ink: #29232f;
+  --muted: #756a7e;
+  --line: #ddd5e3;
+  --lavender: #80639d;
+  --lavender-soft: #e9e1f0;
+  --lavender-deep: #624878;
+  --success: #3d7a5a;
+  --success-soft: #e4f3ea;
+  --danger: #b42318;
+  --shadow: 0 10px 30px rgba(60, 50, 80, 0.06);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-paper: var(--paper);
+  --color-paper-strong: var(--paper-strong);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-lavender: var(--lavender);
+  --color-lavender-soft: var(--lavender-soft);
+  --color-lavender-deep: var(--lavender-deep);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --font-sans: var(--font-ui);
+  --font-urdu: var(--font-urdu);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html,
+body {
+  background: var(--paper);
+  color: var(--ink);
+  min-height: 100%;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-ui), ui-sans-serif, system-ui, sans-serif;
+}
+
+*:focus-visible {
+  outline: 2px solid var(--lavender);
+  outline-offset: 2px;
+}
+
+.font-hand-clean { font-family: var(--font-caveat), cursive; }
+.font-hand-class { font-family: var(--font-kalam), cursive; }
+.font-hand-aesthetic { font-family: var(--font-gochi), cursive; }
+.font-hand-display { font-family: var(--font-patrick), cursive; }
+.font-hand-exam { font-family: var(--font-patrick), cursive; }
+.font-hand-quick { font-family: var(--font-handlee), cursive; }
+.font-hand-simple { font-family: var(--font-indie), cursive; }
+.font-hand-pen { font-family: var(--font-shadows), cursive; }
+.font-hand-liner { font-family: var(--font-architects), cursive; }
+.font-hand-academic { font-family: var(--font-schoolbell), cursive; }
+.font-hand-creative { font-family: var(--font-homemade), cursive; }
+.font-hand-journal { font-family: var(--font-marck), cursive; }
+.font-hand-detailed { font-family: var(--font-gloria), cursive; }
+.font-hand-personal { font-family: var(--font-rock), cursive; }
+.font-hand-casual { font-family: var(--font-covered), cursive; }
+.font-urdu { font-family: var(--font-urdu), serif; }
+
+.note-page {
+  width: min(100%, 794px);
+  min-height: 1040px;
+  position: relative;
+  overflow: hidden;
+  border-radius: 6px;
+  box-shadow: var(--shadow);
+}
+
+.note-page::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 31px,
+    var(--rule, rgba(120, 90, 180, 0.08)) 32px
+  );
+  pointer-events: none;
+}
+
+.note-page::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 52px;
+  width: 1px;
+  background: var(--margin-line, rgba(216, 80, 80, 0.35));
+  pointer-events: none;
+}
+
+.note-inner {
+  position: relative;
+  z-index: 1;
+  padding: 48px 40px 48px 72px;
+}
+
+@media (max-width: 640px) {
+  .note-page { min-height: 720px; }
+  .note-inner { padding: 28px 16px 28px 28px; }
+  .note-page::after { left: 18px; }
+}
+
+.hl-definition { background: rgba(196, 181, 253, 0.45); }
+.hl-important { background: rgba(253, 224, 71, 0.45); }
+.hl-formula { background: rgba(125, 211, 252, 0.4); }
+.hl-example { background: rgba(167, 243, 208, 0.45); }
+.hl-exam { background: rgba(253, 186, 116, 0.45); }
+.hl-conclusion { background: rgba(196, 181, 253, 0.3); }
+
+.skip-link { position: absolute; left: -999px; top: 8px; }
+.skip-link:focus { left: 8px; background: white; padding: 8px 12px; z-index: 50; }
+
+@media print {
+  body { background: white; }
+  .no-print { display: none !important; }
+  .note-page { box-shadow: none; break-after: page; width: 100%; }
 }

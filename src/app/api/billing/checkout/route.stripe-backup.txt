@@ -1,0 +1,60 @@
+import { NextRequest } from "next/server";
+import { requireUser } from "@/lib/auth";
+import { getStripe, paymentsConfigured } from "@/lib/stripe";
+import { priceIdEnv } from "@/lib/plans";
+import { handleRouteError, json } from "@/lib/http";
+import { AppError } from "@/lib/errors";
+import { appUrl } from "@/lib/auth";
+import type { BillingCycle, PlanId } from "@/lib/types";
+import { connectDb } from "@/lib/db";
+import { User } from "@/models/User";
+
+export async function POST(req: NextRequest) {
+  try {
+    const user = await requireUser();
+    if (!paymentsConfigured()) {
+      throw new AppError(
+        "Checkout is not configured yet. Add Stripe keys in your environment.",
+        503,
+        "PAYMENTS_DISABLED",
+      );
+    }
+    const { planId, billingCycle } = (await req.json()) as {
+      planId: PlanId;
+      billingCycle: BillingCycle;
+    };
+    if (planId === "free") throw new AppError("The Free plan does not require checkout.");
+    const price = priceIdEnv(planId, billingCycle);
+    if (!price) {
+      throw new AppError(
+        "This price is not configured. Set the Stripe price IDs in environment variables.",
+        503,
+      );
+    }
+    const stripe = getStripe();
+    await connectDb();
+    let customerId = user.stripeCustomerId;
+    if (!customerId) {
+      const customer = await stripe.customers.create({
+        email: user.email,
+        name: user.name,
+        metadata: { userId: String(user._id) },
+      });
+      customerId = customer.id;
+      await User.updateOne({ _id: user._id }, { stripeCustomerId: customerId });
+    }
+    const session = await stripe.checkout.sessions.create({
+      mode: "subscription",
+      customer: customerId,
+      line_items: [{ price, quantity: 1 }],
+      success_url: `${appUrl()}/billing?checkout=success`,
+      cancel_url: `${appUrl()}/billing?checkout=cancelled`,
+      metadata: { userId: String(user._id), planId, billingCycle },
+      subscription_data: { metadata: { userId: String(user._id), planId, billingCycle } },
+    });
+    if (!session.url) throw new AppError("Could not start checkout.");
+    return json({ url: session.url });
+  } catch (e) {
+    return handleRouteError(e);
+  }
+}

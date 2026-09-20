@@ -1,0 +1,21 @@
+import Stripe from "stripe";
+import { AppError } from "./errors";
+
+let client: Stripe | null = null;
+
+export function getStripe(): Stripe {
+  const key = process.env.PAYMENT_SECRET_KEY;
+  if (!key) {
+    throw new AppError(
+      "Payments are not configured. Set PAYMENT_SECRET_KEY to enable checkout.",
+      503,
+      "PAYMENTS_DISABLED",
+    );
+  }
+  if (!client) client = new Stripe(key);
+  return client;
+}
+
+export function paymentsConfigured() {
+  return Boolean(process.env.PAYMENT_SECRET_KEY);
+}

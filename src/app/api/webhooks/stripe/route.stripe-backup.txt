@@ -1,0 +1,114 @@
+import { NextRequest } from "next/server";
+import { getStripe } from "@/lib/stripe";
+import { connectDb } from "@/lib/db";
+import { User } from "@/models/User";
+import { Subscription, Invoice } from "@/models/Subscription";
+import type Stripe from "stripe";
+import type { BillingCycle, PlanId } from "@/lib/types";
+
+export const runtime = "nodejs";
+
+export async function POST(req: NextRequest) {
+  const secret = process.env.PAYMENT_WEBHOOK_SECRET;
+  if (!secret) {
+    return new Response("Webhook secret missing", { status: 503 });
+  }
+  const stripe = getStripe();
+  const body = await req.text();
+  const sig = req.headers.get("stripe-signature");
+  if (!sig) return new Response("Missing signature", { status: 400 });
+  let event: Stripe.Event;
+  try {
+    event = stripe.webhooks.constructEvent(body, sig, secret);
+  } catch {
+    return new Response("Invalid signature", { status: 400 });
+  }
+
+  await connectDb();
+
+  if (event.type === "checkout.session.completed") {
+    const session = event.data.object as Stripe.Checkout.Session;
+    const userId = session.metadata?.userId;
+    const planId = session.metadata?.planId as PlanId | undefined;
+    const billingCycle = session.metadata?.billingCycle as BillingCycle | undefined;
+    if (userId && session.subscription && planId) {
+      const sub = await stripe.subscriptions.retrieve(String(session.subscription));
+      await applySubscription(userId, sub, planId, billingCycle || "monthly");
+    }
+  }
+
+  if (
+    event.type === "customer.subscription.updated" ||
+    event.type === "customer.subscription.deleted"
+  ) {
+    const sub = event.data.object as Stripe.Subscription;
+    const userId = sub.metadata?.userId;
+    const planId = (sub.metadata?.planId as PlanId) || "student";
+    const billingCycle = (sub.metadata?.billingCycle as BillingCycle) || "monthly";
+    if (userId) await applySubscription(userId, sub, planId, billingCycle);
+  }
+
+  if (event.type === "invoice.paid" || event.type === "invoice.payment_failed") {
+    const invoice = event.data.object as Stripe.Invoice;
+    const customerId = String(invoice.customer || "");
+    const user = await User.findOne({ stripeCustomerId: customerId });
+    if (user) {
+      await Invoice.updateOne(
+        { stripeInvoiceId: invoice.id },
+        {
+          userId: user._id,
+          stripeInvoiceId: invoice.id,
+          amountPaid: (invoice.amount_paid || 0) / 100,
+          currency: invoice.currency,
+          status: invoice.status,
+          hostedInvoiceUrl: invoice.hosted_invoice_url,
+          invoicePdf: invoice.invoice_pdf,
+          description: invoice.lines?.data?.[0]?.description,
+        },
+        { upsert: true },
+      );
+    }
+  }
+
+  return new Response("ok");
+}
+
+async function applySubscription(
+  userId: string,
+  sub: Stripe.Subscription,
+  planId: PlanId,
+  billingCycle: BillingCycle,
+) {
+  const periodEnd = sub.current_period_end
+    ? new Date(sub.current_period_end * 1000)
+    : undefined;
+  const status = sub.status;
+  const active = ["active", "trialing", "past_due"].includes(status) && !sub.ended_at;
+  await User.updateOne(
+    { _id: userId },
+    {
+      stripeCustomerId: String(sub.customer),
+      stripeSubscriptionId: sub.id,
+      planId: active ? planId : "free",
+      billingCycle,
+      subscriptionStatus: status,
+      currentPeriodEnd: periodEnd,
+      cancelAtPeriodEnd: Boolean(sub.cancel_at_period_end),
+    },
+  );
+  await Subscription.updateOne(
+    { stripeSubscriptionId: sub.id },
+    {
+      userId,
+      stripeCustomerId: String(sub.customer),
+      stripeSubscriptionId: sub.id,
+      planId: active ? planId : "free",
+      billingCycle,
+      status,
+      currentPeriodEnd: periodEnd,
+      cancelAtPeriodEnd: Boolean(sub.cancel_at_period_end),
+      priceId: sub.items.data[0]?.price.id,
+    },
+    { upsert: true },
+  );
+}
