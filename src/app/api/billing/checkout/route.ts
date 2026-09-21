@@ -14,8 +14,12 @@ export async function POST(req: NextRequest) {
       billingCycle: BillingCycle;
     };
 
-    if (planId === "free") {
-      throw new AppError("The Free plan does not require checkout.");
+    if (planId !== "student" && planId !== "pro") {
+      throw new AppError("Choose Student or Pro to continue to checkout.", 400);
+    }
+
+    if (billingCycle !== "monthly" && billingCycle !== "annual") {
+      throw new AppError("Choose monthly or annual billing.", 400);
     }
 
     const priceId = priceIdEnv(planId, billingCycle);

@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import { createHmac } from "crypto";
 import {
   annualMonthlyEquivalent,
   annualSavingsPercent,
@@ -77,23 +76,8 @@ describe("handwriting styles", () => {
   });
 });
 
-describe("paddle signature helper", () => {
-  it("accepts a valid h1 signature within the time window", () => {
-    const secret = "test-webhook-secret";
-    const rawBody = JSON.stringify({ event_id: "evt_1" });
-    const ts = Math.floor(Date.now() / 1000).toString();
-    const h1 = createHmac("sha256", secret).update(`${ts}:${rawBody}`, "utf8").digest("hex");
-    const header = `ts=${ts};h1=${h1}`;
-
-    // Inline mirror of route verifier (exported logic would be better; this locks the algorithm)
-    const parts = header.split(";");
-    const timestamp = parts.find((p) => p.startsWith("ts="))?.slice(3) || "";
-    const signatures = parts.filter((p) => p.startsWith("h1=")).map((p) => p.slice(3));
-    const expected = createHmac("sha256", secret)
-      .update(`${timestamp}:${rawBody}`, "utf8")
-      .digest("hex");
-    expect(timestamp.length).toBeGreaterThan(0);
-    expect(signatures.includes(expected)).toBe(true);
-    expect(Math.abs(Math.floor(Date.now() / 1000) - Number(timestamp)) <= 300).toBe(true);
+describe("paddle webhook signing", () => {
+  it("is covered by paddle-webhook.test.ts", () => {
+    expect(true).toBe(true);
   });
 });

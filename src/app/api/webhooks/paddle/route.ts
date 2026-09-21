@@ -1,10 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createHmac, timingSafeEqual } from "crypto";
 
 import { connectDb } from "@/lib/db";
 import { User } from "@/models/User";
 import { Subscription, Invoice } from "@/models/Subscription";
 import { ProcessedWebhook } from "@/models/ProcessedWebhook";
+import {
+  firstPriceId,
+  getCancelAtPeriodEnd,
+  getPeriodEnd,
+  planAfterSubscriptionEvent,
+  resolveBillingCycle,
+  resolvePlanId,
+  verifyPaddleSignature,
+  type PaddleWebhookData,
+} from "@/lib/paddle-webhook";
 
 export const runtime = "nodejs";
 
@@ -13,137 +22,14 @@ type PaddleWebhook = {
   event_type: string;
   occurred_at: string;
   notification_id: string;
-  data: {
-    id: string;
-    status?: string;
-    customer_id?: string;
-    subscription_id?: string;
-    custom_data?: {
-      userId?: string;
-      planId?: string;
-      billingCycle?: string;
-    } | null;
-    billing_cycle?: {
-      interval?: string;
-      frequency?: number;
-    } | null;
-    current_billing_period?: {
-      starts_at?: string;
-      ends_at?: string;
-    } | null;
-    scheduled_change?: {
-      action?: string;
-      effective_at?: string;
-    } | null;
-    items?: Array<{
-      price?: {
-        id?: string;
-      };
-    }>;
-    details?: {
-      totals?: {
-        total?: string;
-        currency_code?: string;
-      };
-    } | null;
-    checkout?: {
-      url?: string;
-    } | null;
-    invoice_id?: string;
-  };
+  data: PaddleWebhookData;
 };
 
-function verifyPaddleSignature(
-  rawBody: string,
-  signatureHeader: string,
-  secret: string,
-): boolean {
-  const parts = signatureHeader.split(";");
-
-  const timestamp = parts
-    .find((part) => part.startsWith("ts="))
-    ?.slice(3);
-
-  const signatures = parts
-    .filter((part) => part.startsWith("h1="))
-    .map((part) => part.slice(3));
-
-  if (!timestamp || signatures.length === 0) {
-    return false;
+class WebhookRetryError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "WebhookRetryError";
   }
-
-  const timestampNumber = Number(timestamp);
-
-  if (!Number.isFinite(timestampNumber)) {
-    return false;
-  }
-
-  const currentTimestamp = Math.floor(Date.now() / 1000);
-
-  if (Math.abs(currentTimestamp - timestampNumber) > 300) {
-    return false;
-  }
-
-  const signedPayload = `${timestamp}:${rawBody}`;
-
-  const expectedSignature = createHmac("sha256", secret)
-    .update(signedPayload, "utf8")
-    .digest("hex");
-
-  return signatures.some((signature) => {
-    const expected = Buffer.from(expectedSignature, "utf8");
-    const received = Buffer.from(signature, "utf8");
-
-    if (expected.length !== received.length) {
-      return false;
-    }
-
-    return timingSafeEqual(expected, received);
-  });
-}
-
-function getPlanId(
-  data: PaddleWebhook["data"],
-): "free" | "student" | "pro" {
-  const planId = data.custom_data?.planId;
-
-  if (planId === "student" || planId === "pro") {
-    return planId;
-  }
-
-  return "free";
-}
-
-function getBillingCycle(
-  data: PaddleWebhook["data"],
-): "monthly" | "annual" {
-  if (
-    data.billing_cycle?.interval === "year" ||
-    data.custom_data?.billingCycle === "annual"
-  ) {
-    return "annual";
-  }
-
-  return "monthly";
-}
-
-function getPeriodEnd(data: PaddleWebhook["data"]): Date | undefined {
-  const value = data.current_billing_period?.ends_at;
-
-  if (!value) {
-    return undefined;
-  }
-
-  const date = new Date(value);
-
-  return Number.isNaN(date.getTime()) ? undefined : date;
-}
-
-function getCancelAtPeriodEnd(data: PaddleWebhook["data"]): boolean {
-  return (
-    data.scheduled_change?.action === "cancel" &&
-    Boolean(data.scheduled_change.effective_at)
-  );
 }
 
 export async function POST(req: NextRequest) {
@@ -168,13 +54,7 @@ export async function POST(req: NextRequest) {
 
     const rawBody = await req.text();
 
-    if (
-      !verifyPaddleSignature(
-        rawBody,
-        signature,
-        secret,
-      )
-    ) {
+    if (!verifyPaddleSignature(rawBody, signature, secret)) {
       return NextResponse.json(
         { error: "Invalid Paddle webhook signature." },
         { status: 401 },
@@ -190,9 +70,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true, duplicate: true });
     }
 
-    console.log(
-      `[Paddle webhook] ${event.event_type} ${event.event_id}`,
-    );
+    console.log(`[Paddle webhook] ${event.event_type} ${event.event_id}`);
 
     if (
       event.event_type === "subscription.created" ||
@@ -220,6 +98,12 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error("[Paddle webhook] Error:", error);
 
+    // Tell Paddle to retry when we could not apply the paid plan yet
+    // (e.g. user not found). Do not mark the event processed in that case.
+    if (error instanceof WebhookRetryError) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
     return NextResponse.json(
       { error: "Webhook processing failed." },
       { status: 500 },
@@ -227,14 +111,10 @@ export async function POST(req: NextRequest) {
   }
 }
 
-async function syncSubscription(event: PaddleWebhook) {
-  const data = event.data;
-
+async function findUserForPaddleData(data: PaddleWebhookData) {
   const userId = data.custom_data?.userId;
 
-  let user = userId
-    ? await User.findById(userId)
-    : null;
+  let user = userId ? await User.findById(userId) : null;
 
   if (!user && data.customer_id) {
     user = await User.findOne({
@@ -242,30 +122,45 @@ async function syncSubscription(event: PaddleWebhook) {
     });
   }
 
+  return user;
+}
+
+async function syncSubscription(event: PaddleWebhook) {
+  const data = event.data;
+  const user = await findUserForPaddleData(data);
+
   if (!user) {
     console.error(
       "[Paddle webhook] User not found for subscription:",
       data.id,
+      "custom_data.userId=",
+      data.custom_data?.userId || "(missing)",
+      "customer_id=",
+      data.customer_id || "(missing)",
     );
-
-    return;
+    throw new WebhookRetryError(
+      "User not found for subscription webhook; will retry.",
+    );
   }
 
-  const planId = getPlanId(data);
-  const billingCycle = getBillingCycle(data);
   const status = data.status || "active";
+  const { planId, billingCycle } = planAfterSubscriptionEvent(data, status);
+  const priceId = firstPriceId(data);
 
-  const activeStatuses = [
-    "active",
-    "trialing",
-    "past_due",
-  ];
-
-  const hasAccess =
-    planId !== "free" &&
-    activeStatuses.includes(status);
-
-  const effectivePlan = hasAccess ? planId : "free";
+  if (
+    (status === "active" || status === "trialing" || status === "past_due") &&
+    planId === "free"
+  ) {
+    console.error(
+      "[Paddle webhook] Active subscription could not resolve a paid plan.",
+      "subscription=",
+      data.id,
+      "priceId=",
+      priceId || "(missing)",
+      "custom_data=",
+      data.custom_data || null,
+    );
+  }
 
   const periodEnd = getPeriodEnd(data);
   const cancelAtPeriodEnd = getCancelAtPeriodEnd(data);
@@ -275,7 +170,7 @@ async function syncSubscription(event: PaddleWebhook) {
     {
       paddleCustomerId: data.customer_id,
       paddleSubscriptionId: data.id,
-      planId: effectivePlan,
+      planId,
       billingCycle,
       subscriptionStatus: status,
       currentPeriodEnd: periodEnd,
@@ -291,12 +186,12 @@ async function syncSubscription(event: PaddleWebhook) {
       userId: user._id,
       paddleCustomerId: data.customer_id,
       paddleSubscriptionId: data.id,
-      planId: effectivePlan,
+      planId,
       billingCycle,
       status,
       currentPeriodEnd: periodEnd,
       cancelAtPeriodEnd,
-      priceId: data.items?.[0]?.price?.id,
+      priceId,
     },
     {
       upsert: true,
@@ -304,26 +199,34 @@ async function syncSubscription(event: PaddleWebhook) {
   );
 
   console.log(
-    `[Paddle webhook] User ${user._id} synced: ${effectivePlan} (${status})`,
+    `[Paddle webhook] User ${user._id} synced: ${planId}/${billingCycle} (${status})`,
   );
 }
 
 async function syncTransaction(event: PaddleWebhook) {
   const data = event.data;
-  const userId = data.custom_data?.userId;
+  const user = await findUserForPaddleData(data);
 
-  let user = userId ? await User.findById(userId) : null;
-  if (!user && data.customer_id) {
-    user = await User.findOne({ paddleCustomerId: data.customer_id });
-  }
   if (!user) {
-    console.error("[Paddle webhook] User not found for transaction:", data.id);
-    return;
+    console.error(
+      "[Paddle webhook] User not found for transaction:",
+      data.id,
+      "custom_data.userId=",
+      data.custom_data?.userId || "(missing)",
+      "customer_id=",
+      data.customer_id || "(missing)",
+    );
+    throw new WebhookRetryError(
+      "User not found for transaction webhook; will retry.",
+    );
   }
 
   const totalCents = Number(data.details?.totals?.total || 0);
   const amountPaid = Number.isFinite(totalCents) ? totalCents / 100 : 0;
-  const planId = getPlanId(data);
+  const planId = resolvePlanId(data);
+  const billingCycle = resolveBillingCycle(data);
+  const priceId = firstPriceId(data);
+  const subscriptionId = data.subscription_id;
 
   await Invoice.updateOne(
     { paddleTransactionId: data.id },
@@ -338,4 +241,52 @@ async function syncTransaction(event: PaddleWebhook) {
     },
     { upsert: true },
   );
+
+  // Successful paid transactions must also upgrade the user when we can resolve
+  // the plan (custom_data and/or configured price ID). Previously only invoices
+  // were written here, so a missing/late subscription.custom_data left users Free.
+  if (planId === "student" || planId === "pro") {
+    await User.updateOne(
+      { _id: user._id },
+      {
+        ...(data.customer_id ? { paddleCustomerId: data.customer_id } : {}),
+        ...(subscriptionId ? { paddleSubscriptionId: subscriptionId } : {}),
+        planId,
+        billingCycle,
+        subscriptionStatus: "active",
+        cancelAtPeriodEnd: false,
+      },
+    );
+
+    if (subscriptionId && data.customer_id) {
+      await Subscription.updateOne(
+        { paddleSubscriptionId: subscriptionId },
+        {
+          userId: user._id,
+          paddleCustomerId: data.customer_id,
+          paddleSubscriptionId: subscriptionId,
+          planId,
+          billingCycle,
+          status: "active",
+          cancelAtPeriodEnd: false,
+          priceId,
+        },
+        { upsert: true },
+      );
+    }
+
+    console.log(
+      `[Paddle webhook] User ${user._id} upgraded from transaction: ${planId}/${billingCycle}`,
+    );
+  } else {
+    console.error(
+      "[Paddle webhook] Paid transaction could not resolve planId.",
+      "transaction=",
+      data.id,
+      "priceId=",
+      priceId || "(missing)",
+      "custom_data=",
+      data.custom_data || null,
+    );
+  }
 }
