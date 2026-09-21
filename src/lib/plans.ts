@@ -4,9 +4,11 @@ import type {
   GenerationOptions,
   HandwritingStyle,
   NoteLength,
+  PaperStyleId,
   PlanId,
   SourceType,
 } from "./types";
+import { PAPER_STYLE_ID_VALUES } from "./types";
 
 export type PlanLimits = {
   id: PlanId;
@@ -21,6 +23,7 @@ export type PlanLimits = {
   diagramGenerationsPerMonth: number | null;
   allowedSources: SourceType[];
   handwritingStyles: HandwritingStyle[];
+  paperStyles: PaperStyleId[];
   noteLengths: NoteLength[];
   languages: GenerationOptions["language"][];
   diagramStyles: DiagramStyle[];
@@ -75,6 +78,18 @@ const ALL_DIAGRAM_STYLES: DiagramStyle[] = [
   "minimal",
 ];
 
+const FREE_PAPER_STYLES: PaperStyleId[] = [
+  "plain-white",
+  "plain-off-white",
+  "classic-blue-ruled",
+  "college-ruled",
+  "soft-cream",
+  "warm-ivory",
+  "small-graph",
+  "study-notes",
+];
+const ALL_PAPER_STYLES = [...PAPER_STYLE_ID_VALUES] as PaperStyleId[];
+
 export const PLANS: Record<PlanId, PlanLimits> = {
   free: {
     id: "free",
@@ -87,6 +102,7 @@ export const PLANS: Record<PlanId, PlanLimits> = {
     diagramGenerationsPerMonth: 0,
     allowedSources: ["text"],
     handwritingStyles: FREE_STYLES,
+    paperStyles: FREE_PAPER_STYLES,
     noteLengths: ["quick", "standard"],
     languages: ["english"],
     diagramStyles: [],
@@ -122,6 +138,7 @@ export const PLANS: Record<PlanId, PlanLimits> = {
     diagramGenerationsPerMonth: 10,
     allowedSources: ["text", "pdf", "image", "diagram"],
     handwritingStyles: STUDENT_STYLES,
+    paperStyles: ALL_PAPER_STYLES,
     noteLengths: ["quick", "standard", "detailed"],
     languages: ["english", "easy-english", "urdu", "roman-urdu"],
     diagramStyles: ALL_DIAGRAM_STYLES,
@@ -157,6 +174,7 @@ export const PLANS: Record<PlanId, PlanLimits> = {
     diagramGenerationsPerMonth: null,
     allowedSources: ["text", "youtube", "pdf", "image", "diagram"],
     handwritingStyles: PRO_STYLES,
+    paperStyles: ALL_PAPER_STYLES,
     noteLengths: ["quick", "standard", "detailed"],
     languages: ["english", "easy-english", "urdu", "roman-urdu"],
     diagramStyles: ALL_DIAGRAM_STYLES,

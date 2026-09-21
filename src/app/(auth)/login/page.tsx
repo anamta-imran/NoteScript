@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, useState } from "react";
 
+import { BrandLogo } from "@/components/brand/BrandLogo";
 import { Button } from "@/components/ui/Button";
 import { Field, Input } from "@/components/ui/Field";
 import { api } from "@/lib/api";
@@ -48,16 +49,8 @@ export default function LoginPage() {
 
       <div className="relative w-full max-w-md">
         {/* Brand */}
-        <div className="mb-8 text-center">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-xl font-semibold tracking-tight text-[#292230]"
-          >
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#80639d] text-sm font-bold text-white shadow-[0_6px_20px_rgba(126,95,160,0.25)]">
-              N
-            </span>
-            NoteScript
-          </Link>
+        <div className="mb-8 flex justify-center">
+          <BrandLogo href="/" size="lg" priority className="text-[#292230]" />
         </div>
 
         {/* Card */}

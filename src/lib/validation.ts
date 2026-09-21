@@ -3,6 +3,7 @@ import {
   HANDWRITING_STYLES,
   LANGUAGES,
   NOTE_LENGTHS,
+  PAPER_STYLE_ID_VALUES,
   SOURCE_TYPES,
   SUBJECTS,
 } from "./types";
@@ -84,6 +85,7 @@ export const generationOptionsSchema = z.object({
   diagramColorMode: z.enum(["color", "bw"]).optional(),
   diagramLabelled: z.boolean().optional(),
   flowchartSteps: z.array(z.string().max(80)).max(12).optional(),
+  paperStyleId: z.enum(PAPER_STYLE_ID_VALUES).optional(),
 });
 
 export const createJobSchema = z.object({

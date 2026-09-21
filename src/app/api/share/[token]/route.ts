@@ -18,6 +18,7 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ token: str
         title: note.title,
         pages: note.pages,
         handwritingStyle: note.handwritingStyle,
+        paperStyleId: note.paperStyleId || null,
         language: note.language,
         subject: note.subject,
         pageCount: note.pageCount,

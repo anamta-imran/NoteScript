@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BrandLogo } from "@/components/brand/BrandLogo";
 import { Button } from "@/components/ui/Button";
 
 const links = [
@@ -14,9 +15,7 @@ export function MarketingHeader() {
   return (
     <header className="no-print sticky top-0 z-20 border-b border-line/80 bg-paper/90 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
-        <Link href="/" className="font-hand-clean text-2xl text-lavender-deep">
-          NoteScript
-        </Link>
+        <BrandLogo href="/" size="md" priority />
         <nav className="hidden items-center gap-5 text-sm md:flex">
           {links.map((l) => (
             <Link key={l.href} href={l.href} className="text-muted hover:text-ink">

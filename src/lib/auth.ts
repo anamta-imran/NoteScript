@@ -5,17 +5,10 @@ import { createHash, randomBytes } from "crypto";
 import { connectDb } from "./db";
 import { User, type UserDoc } from "@/models/User";
 import { UnauthorizedError } from "./errors";
+import { AuthConfigError, authSecretKey } from "./auth-secret";
 import type { PublicUser } from "./types";
 
 const COOKIE = process.env.AUTH_COOKIE_NAME || "notescript_session";
-
-function secretKey() {
-  const secret = process.env.AUTH_SECRET;
-  if (!secret || secret.length < 32) {
-    throw new Error("AUTH_SECRET must be set to at least 32 characters.");
-  }
-  return new TextEncoder().encode(secret);
-}
 
 export async function hashPassword(password: string) {
   return bcrypt.hash(password, 12);
@@ -38,7 +31,7 @@ export async function createSession(userId: string) {
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime("14d")
-    .sign(secretKey());
+    .sign(authSecretKey());
   const jar = await cookies();
   jar.set(COOKIE, token, {
     httpOnly: true,
@@ -59,9 +52,11 @@ export async function getSessionUserId(): Promise<string | null> {
   const token = jar.get(COOKIE)?.value;
   if (!token) return null;
   try {
-    const { payload } = await jwtVerify(token, secretKey());
+    const { payload } = await jwtVerify(token, authSecretKey());
     return (payload.sub as string) ?? null;
-  } catch {
+  } catch (error) {
+    // Misconfigured AUTH_SECRET must surface as 503 via requireUser, not as "logged out".
+    if (error instanceof AuthConfigError) throw error;
     return null;
   }
 }

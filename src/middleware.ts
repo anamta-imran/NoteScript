@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
+import { authSecretConfigured, resolveAuthSecret } from "@/lib/auth-secret";
 
 const PROTECTED = [
   "/dashboard",
@@ -12,10 +13,9 @@ const PROTECTED = [
 ];
 
 async function sessionIsValid(token: string): Promise<boolean> {
-  const secret = process.env.AUTH_SECRET;
-  if (!secret || secret.length < 32) return false;
+  if (!authSecretConfigured()) return false;
   try {
-    await jwtVerify(token, new TextEncoder().encode(secret));
+    await jwtVerify(token, new TextEncoder().encode(resolveAuthSecret()));
     return true;
   } catch {
     return false;

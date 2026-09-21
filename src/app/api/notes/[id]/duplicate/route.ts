@@ -27,6 +27,7 @@ export async function POST(_req: NextRequest, ctx: { params: Promise<{ id: strin
       structuredContent: note.structuredContent,
       pages: note.pages,
       handwritingStyle: note.handwritingStyle,
+      paperStyleId: note.paperStyleId,
       language: note.language,
       noteLength: note.noteLength,
       subject: note.subject,

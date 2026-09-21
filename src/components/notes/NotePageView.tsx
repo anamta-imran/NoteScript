@@ -1,6 +1,7 @@
 import type { HandwritingStyle, NoteBlock, NoteLanguage } from "@/lib/types";
 import { getHandwritingTheme } from "@/lib/engine/handwritingThemes";
 import { normalizeHandwritingStyle } from "@/lib/plans";
+import { paperStyleToCssVars, resolvePaperStyle } from "@/lib/paper-styles";
 import { DiagramSvg } from "./DiagramSvg";
 import { cn } from "@/lib/utils";
 
@@ -168,32 +169,44 @@ export function NotePageView({
   language,
   pageNumber,
   seed,
+  paperStyleId,
 }: {
   blocks: NoteBlock[];
   style: HandwritingStyle;
   language: NoteLanguage;
   pageNumber: number;
   seed?: number;
+  paperStyleId?: string | null;
 }) {
   const theme = getHandwritingTheme(normalizeHandwritingStyle(style));
+  const paper = resolvePaperStyle(paperStyleId);
   const rotate = ((seed ?? 1) % 3) - 1;
+  const paperVars = paper ? paperStyleToCssVars(paper) : null;
+
   return (
     <article
       className={cn(
         "note-page",
+        paper && "note-page--custom-paper paper-surface",
+        paper?.dark && "paper-surface--dark",
         theme.fontClass,
         language === "urdu" && "font-urdu text-right",
       )}
+      data-paper={paper?.id}
+      data-pattern={paper?.pattern.kind}
       style={{
-        background: theme.paper,
-        ["--rule" as string]: theme.rule,
-        ["--margin-line" as string]: theme.marginLine,
+        ...(paperVars || {
+          background: theme.paper,
+          ["--rule" as string]: theme.rule,
+          ["--margin-line" as string]: theme.marginLine,
+        }),
         lineHeight: theme.lineHeight,
         letterSpacing: theme.letterSpacing,
         fontSize: theme.fontSize,
         transform: `rotate(${rotate * 0.15}deg)`,
       }}
     >
+      {paper ? <div className="paper-surface__layers" aria-hidden /> : null}
       <div className="note-inner">
         {theme.decoration === "stars" ? <p className="mb-2 text-lavender">✦ ✦ ✦</p> : null}
         {theme.decoration === "journal" ? (

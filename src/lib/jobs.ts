@@ -165,6 +165,7 @@ export async function runJob(jobId: string) {
       structuredContent: structured,
       pages,
       handwritingStyle: payload.options.handwritingStyle,
+      paperStyleId: payload.options.paperStyleId || undefined,
       language: payload.options.language,
       noteLength: payload.options.noteLength,
       subject: structured.subject,

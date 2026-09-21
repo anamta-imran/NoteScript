@@ -24,6 +24,63 @@ export const HANDWRITING_STYLES = [
 ] as const;
 export type HandwritingStyle = (typeof HANDWRITING_STYLES)[number];
 
+export const PAPER_STYLE_ID_VALUES = [
+  "classic-blue-ruled",
+  "college-ruled",
+  "wide-ruled",
+  "narrow-ruled",
+  "red-margin-notebook",
+  "blue-margin-notebook",
+  "double-margin-notebook",
+  "soft-grey-ruled",
+  "cream-notebook",
+  "legal-ruled",
+  "small-graph",
+  "medium-graph",
+  "large-graph",
+  "engineering-grid",
+  "math-grid",
+  "isometric-grid",
+  "dot-grid",
+  "fine-dot-grid",
+  "bullet-journal-grid",
+  "faint-square-grid",
+  "school-exercise-book",
+  "exam-answer-sheet",
+  "revision-sheet",
+  "homework-sheet",
+  "study-notes",
+  "cornell-notes",
+  "cornell-minimal",
+  "vocabulary-sheet",
+  "flashcard-paper",
+  "assignment-sheet",
+  "clean-office-paper",
+  "letterhead-minimal",
+  "legal-pad",
+  "memo-paper",
+  "meeting-notes",
+  "project-notes",
+  "plain-professional",
+  "cream-office",
+  "executive-ruled",
+  "faint-professional-grid",
+  "warm-ivory",
+  "soft-cream",
+  "recycled-paper",
+  "kraft-paper",
+  "subtle-fiber-paper",
+  "vintage-notebook",
+  "aged-paper",
+  "handmade-paper",
+  "plain-white",
+  "plain-off-white",
+  "minimal-grey",
+  "dark-paper",
+  "blackboard-study-paper",
+] as const;
+export type PaperStyleId = (typeof PAPER_STYLE_ID_VALUES)[number];
+
 export const NOTE_LENGTHS = ["quick", "standard", "detailed"] as const;
 export type NoteLength = (typeof NOTE_LENGTHS)[number];
 
@@ -198,6 +255,7 @@ export type GenerationOptions = {
   diagramColorMode?: DiagramColorMode;
   diagramLabelled?: boolean;
   flowchartSteps?: string[];
+  paperStyleId?: PaperStyleId;
 };
 
 export type ExtractedContent = {

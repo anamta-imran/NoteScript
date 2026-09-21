@@ -13,11 +13,14 @@ import type {
   DiagramTemplateId,
   GenerationOptions,
   HandwritingStyle,
+  PaperStyleId,
   PlanId,
   PublicUser,
   SourceType,
 } from "@/lib/types";
 import { Modal } from "@/components/ui/Modal";
+import { PaperStylePicker } from "@/components/paper/PaperStylePicker";
+import { DEFAULT_PAPER_STYLE_ID } from "@/lib/paper-styles";
 
 const DEFAULT_OPTIONS: GenerationOptions = {
   handwritingStyle: "clean-study",
@@ -31,6 +34,7 @@ const DEFAULT_OPTIONS: GenerationOptions = {
   diagrams: false,
   chapterDetection: false,
   diagramStyle: "handwritten",
+  paperStyleId: DEFAULT_PAPER_STYLE_ID as PaperStyleId,
 };
 
 export function CreateNoteForm({ sourceType }: { sourceType: SourceType }) {
@@ -374,6 +378,23 @@ export function CreateNoteForm({ sourceType }: { sourceType: SourceType }) {
           })}
         </div>
       </div>
+
+      {sourceType !== "diagram" ? (
+        <div>
+          <p className="mb-1 text-sm font-medium">Paper style</p>
+          <p className="mb-3 text-xs text-muted">
+            Choose what the notes are written on — independent from handwriting.
+          </p>
+          <PaperStylePicker
+            value={options.paperStyleId || DEFAULT_PAPER_STYLE_ID}
+            allowedIds={plan.paperStyles}
+            compact
+            onChange={(id) =>
+              setOptions({ ...options, paperStyleId: id as PaperStyleId })
+            }
+          />
+        </div>
+      ) : null}
 
       {sourceType !== "diagram" ? (
         <div className="grid gap-4 sm:grid-cols-2">

@@ -13,6 +13,7 @@ export default function SharedNotePage() {
     title: string;
     pages: NotePage[];
     handwritingStyle: HandwritingStyle;
+    paperStyleId?: string | null;
     language: NoteLanguage;
   } | null>(null);
   const [error, setError] = useState("");
@@ -56,6 +57,7 @@ export default function SharedNotePage() {
         <NotePageView
           blocks={page.blocks}
           style={note.handwritingStyle}
+          paperStyleId={note.paperStyleId}
           language={note.language}
           pageNumber={pageIndex + 1}
           seed={page.seed}

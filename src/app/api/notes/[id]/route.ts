@@ -14,6 +14,7 @@ function serialize(note: InstanceType<typeof Note>) {
     structuredContent: note.structuredContent,
     pages: note.pages,
     handwritingStyle: note.handwritingStyle,
+    paperStyleId: note.paperStyleId || null,
     language: note.language,
     noteLength: note.noteLength,
     subject: note.subject,

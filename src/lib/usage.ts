@@ -119,6 +119,9 @@ export async function assertCanGenerate(
   if (!plan.handwritingStyles.includes(style) && !plan.handwritingStyles.includes(options.handwritingStyle)) {
     throw new ForbiddenError("That handwriting style is not included in your plan.");
   }
+  if (options.paperStyleId && !plan.paperStyles.includes(options.paperStyleId)) {
+    throw new ForbiddenError("That paper style is not included in your plan.");
+  }
   if (!plan.noteLengths.includes(options.noteLength)) {
     throw new ForbiddenError("That note length is not included in your plan.");
   }

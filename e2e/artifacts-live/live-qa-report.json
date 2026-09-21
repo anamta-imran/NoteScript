@@ -1,0 +1,55 @@
+{
+  "verified": [
+    "Public page / → 200",
+    "Public page /pricing → 200",
+    "Public page /features → 200",
+    "Public page /how-it-works → 200",
+    "Public page /templates → 200",
+    "Public page /faq → 200",
+    "Public page /about → 200",
+    "Public page /terms → 200",
+    "Public page /privacy → 200",
+    "Public page /refund → 200",
+    "GET /api/health ok",
+    "Homepage loaded in browser",
+    "Pricing monthly shows Free $0, Student $14.99, Pro $18.99",
+    "Pricing annual shows Student $99.99 and Pro $139.99",
+    "Nav/footer link present: Features",
+    "Nav/footer link present: Pricing",
+    "Nav/footer link present: FAQ",
+    "Refund footer link navigates to /refund",
+    "Pricing mobile viewport: no horizontal overflow",
+    "Free plan rejects YouTube (401)",
+    "Free plan rejects Diagram (401)",
+    "Free plan rejects Image (401)",
+    "Free plan rejects PDF (401)",
+    "Free blocks Pro handwriting style (401)",
+    "Free blocks locked paper style blackboard-study-paper (401)"
+  ],
+  "failed": [
+    "Signup failed status=500 error=Something went wrong. Please try again.",
+    "Login failed: 500 Something went wrong. Please try again.",
+    "GET /api/auth/me unexpected",
+    "MongoDB: test user not found",
+    "Folders API failed: 401",
+    "Free text job rejected: 401 Please sign in to continue.",
+    "Checkout API failed: 401 Please sign in to continue.",
+    "Plan changed unexpectedly to undefined",
+    "Account upgraded without completed payment",
+    "Browser console errors: Failed to load resource: the server responded with a status of 500 ()"
+  ],
+  "notVerified": [
+    "Settings PATCH status=401",
+    "Paddle overlay not clearly detected — may need manual browser verification",
+    "Student Sandbox payment + webhook upgrade: not executed (overlay blocked or payment intentionally skipped)",
+    "Post-payment Student entitlements: requires successful Sandbox payment — manual follow-up"
+  ],
+  "blockers": [],
+  "meta": {
+    "base": "https://notescript-xi.vercel.app",
+    "startedAt": "2026-09-21T12:11:52.381Z",
+    "finishedAt": "2026-09-21T12:12:49.698Z",
+    "testEmail": "notescript.e2e.1789992712383@example.com",
+    "userId": null
+  }
+}

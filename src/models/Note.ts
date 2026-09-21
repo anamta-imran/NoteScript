@@ -14,6 +14,7 @@ const NoteSchema = new Schema(
     structuredContent: { type: Schema.Types.Mixed, required: true },
     pages: { type: Schema.Types.Mixed, required: true },
     handwritingStyle: { type: String, required: true },
+    paperStyleId: { type: String },
     language: { type: String, required: true },
     noteLength: { type: String, required: true },
     subject: { type: String, required: true },

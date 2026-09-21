@@ -18,6 +18,7 @@ type NoteDetail = {
   title: string;
   pages: NotePage[];
   handwritingStyle: HandwritingStyle;
+  paperStyleId?: string | null;
   language: NoteLanguage;
   pageCount: number;
   subject: string;
@@ -216,6 +217,7 @@ export default function NoteDetailPage() {
             <NotePageView
               blocks={page.blocks}
               style={note.handwritingStyle}
+              paperStyleId={note.paperStyleId}
               language={note.language}
               pageNumber={pageIndex + 1}
               seed={page.seed}

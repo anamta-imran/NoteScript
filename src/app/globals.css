@@ -96,6 +96,61 @@ body {
   pointer-events: none;
 }
 
+.note-page.note-page--custom-paper::before,
+.note-page.note-page--custom-paper::after {
+  display: none;
+}
+
+.paper-surface {
+  position: relative;
+  background-color: var(--paper-bg, #fff);
+  color: var(--paper-ink, inherit);
+}
+
+.paper-surface__layers,
+.paper-preview .paper-surface__layers {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-color: var(--paper-bg, transparent);
+  background-image:
+    var(--paper-header, none),
+    var(--paper-footer, none),
+    var(--paper-summary, none),
+    var(--paper-cue, none),
+    var(--paper-margin-dual, none),
+    var(--paper-grid-extra, none),
+    var(--paper-rule, none),
+    var(--paper-texture, none);
+  background-repeat: repeat, repeat, no-repeat, repeat, repeat, repeat, repeat, repeat;
+  background-size: auto, auto, 100% 100%, auto, auto, auto, auto, auto;
+  background-position: 0 0;
+}
+
+.paper-surface[style*="--paper-pattern: dots"] .paper-surface__layers,
+.paper-preview[style*="--paper-pattern: dots"] .paper-surface__layers,
+.paper-surface[data-pattern="dots"] .paper-surface__layers,
+.paper-preview[data-pattern="dots"] .paper-surface__layers {
+  background-size: auto, auto, 100% 100%, auto, auto, auto, var(--paper-dot-size) var(--paper-dot-size), auto;
+}
+
+.paper-surface::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--paper-margin-left, 0px);
+  width: var(--paper-margin-width, 0px);
+  background: var(--paper-margin-color, transparent);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.note-page.note-page--custom-paper .note-inner {
+  padding-left: var(--paper-pad-left, 72px);
+}
+
 .note-inner {
   position: relative;
   z-index: 1;
@@ -106,6 +161,9 @@ body {
   .note-page { min-height: 720px; }
   .note-inner { padding: 28px 16px 28px 28px; }
   .note-page::after { left: 18px; }
+  .note-page.note-page--custom-paper .note-inner {
+    padding-left: max(28px, calc(var(--paper-pad-left, 48px) * 0.55));
+  }
 }
 
 .hl-definition { background: rgba(196, 181, 253, 0.45); }
