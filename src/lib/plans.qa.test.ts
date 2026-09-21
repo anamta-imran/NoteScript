@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { createHmac } from "crypto";
-import { getPlan, normalizeHandwritingStyle, styleMinPlan } from "@/lib/plans";
+import {
+  annualMonthlyEquivalent,
+  annualSavingsPercent,
+  getPlan,
+  normalizeHandwritingStyle,
+  styleMinPlan,
+} from "@/lib/plans";
 import { SELECTABLE_STYLES, getHandwritingTheme, HANDWRITING_THEMES } from "@/lib/engine/handwritingThemes";
 import type { HandwritingStyle } from "@/lib/types";
 
@@ -14,6 +20,8 @@ describe("plan matrix (CODE logic)", () => {
     expect(p.diagramGenerationsPerMonth).toBe(0);
     expect(p.handwritingStyles).toEqual(["clean-study", "simple-student"]);
     expect(p.duplicateNotes).toBe(false);
+    expect(p.monthlyPriceUsd).toBe(0);
+    expect(p.annualPriceUsd).toBe(0);
   });
 
   it("student: no youtube, limited image/diagram, unlimited text", () => {
@@ -23,9 +31,11 @@ describe("plan matrix (CODE logic)", () => {
     expect(p.allowedSources.includes("pdf")).toBe(true);
     expect(p.allowedSources.includes("image")).toBe(true);
     expect(p.allowedSources.includes("diagram")).toBe(true);
-    expect(p.imageGenerationsPerMonth).toBe(3);
-    expect(p.diagramGenerationsPerMonth).toBe(3);
-    expect(p.handwritingStyles).toHaveLength(5);
+    expect(p.imageGenerationsPerMonth).toBe(10);
+    expect(p.diagramGenerationsPerMonth).toBe(10);
+    expect(p.handwritingStyles).toHaveLength(10);
+    expect(p.monthlyPriceUsd).toBe(14.99);
+    expect(p.annualPriceUsd).toBe(99.99);
   });
 
   it("pro: all sources unlimited", () => {
@@ -34,6 +44,15 @@ describe("plan matrix (CODE logic)", () => {
     expect(p.imageGenerationsPerMonth).toBeNull();
     expect(p.diagramGenerationsPerMonth).toBeNull();
     expect(p.handwritingStyles.length).toBeGreaterThanOrEqual(14);
+    expect(p.monthlyPriceUsd).toBe(18.99);
+    expect(p.annualPriceUsd).toBe(139.99);
+  });
+
+  it("annual savings helpers use the new prices", () => {
+    expect(annualMonthlyEquivalent("student")).toBe(8.33);
+    expect(annualMonthlyEquivalent("pro")).toBe(11.67);
+    expect(annualSavingsPercent("student")).toBe(44);
+    expect(annualSavingsPercent("pro")).toBe(39);
   });
 });
 
@@ -53,7 +72,8 @@ describe("handwriting styles", () => {
   it("assigns min plans correctly", () => {
     expect(styleMinPlan("clean-study")).toBe("free");
     expect(styleMinPlan("exam-notes")).toBe("student");
-    expect(styleMinPlan("realistic-pen" as HandwritingStyle)).toBe("pro");
+    expect(styleMinPlan("realistic-pen" as HandwritingStyle)).toBe("student");
+    expect(styleMinPlan("creative-handwriting" as HandwritingStyle)).toBe("pro");
   });
 });
 

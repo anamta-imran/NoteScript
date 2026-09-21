@@ -69,8 +69,9 @@ export function MarketingFooter() {
             items: [
               ["/about", "About"],
               ["/faq", "FAQ"],
-              ["/terms", "Terms"],
-              ["/privacy", "Privacy"],
+              ["/terms", "Terms of Service"],
+              ["/privacy", "Privacy Policy"],
+              ["/refund", "Refund Policy"],
             ],
           },
           {

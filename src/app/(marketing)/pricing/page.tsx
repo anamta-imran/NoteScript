@@ -13,6 +13,51 @@ import type { BillingCycle, PlanId } from "@/lib/types";
 
 const planOrder = ["free", "student", "pro"] as const;
 
+const PLAN_FEATURES: Record<PlanId, string[]> = {
+  free: [
+    "Text → handwritten notes",
+    "3 note generations total",
+    "2 basic handwriting styles",
+    "Basic dashboard",
+    "Basic note saving",
+    "No YouTube",
+    "No PDF",
+    "No image/OCR",
+    "No diagram generation",
+    "No advanced styles",
+  ],
+  student: [
+    "Unlimited text → handwritten notes",
+    "PDF → handwritten notes",
+    "10 image/OCR generations per month",
+    "Educational diagrams",
+    "Flowcharts",
+    "Scientific/educational diagrams",
+    "Color + Black & White diagrams",
+    "Labelled + Unlabelled diagrams",
+    "10 handwriting styles",
+    "More templates",
+    "Save notes & folders",
+    "Download & print",
+    "Basic customization",
+    "No YouTube",
+  ],
+  pro: [
+    "Everything in Student",
+    "YouTube → handwritten notes",
+    "Higher/high image/OCR allowance",
+    "Unlimited diagrams",
+    "Flowcharts + scientific diagrams",
+    "Color + B&W, Labelled + Unlabelled",
+    "All handwriting styles",
+    "All templates",
+    "Advanced customization",
+    "Unlimited folders",
+    "Download & print",
+    "Priority processing",
+  ],
+};
+
 async function resolveLoggedIn(): Promise<boolean> {
   try {
     const res = await fetch("/api/auth/me", { credentials: "include" });
@@ -242,84 +287,15 @@ export default function PricingPage() {
                       What&apos;s included
                     </p>
 
-                    <ul className="mt-5 space-y-4 text-sm">
-                      <li className="flex gap-3">
-                        <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-lavender-soft text-[10px] font-bold text-lavender-deep">
-                          ✓
-                        </span>
-                        <span className="text-muted">
-                          <strong className="font-semibold text-foreground">
-                            {p.textGenerations === null
-                              ? "Unlimited"
-                              : p.textLimitIsLifetime
-                                ? `${p.textGenerations} total`
-                                : `${p.textGenerations}/mo`}
-                          </strong>{" "}
-                          text generations
-                        </span>
-                      </li>
-
-                      <li className="flex gap-3">
-                        <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-lavender-soft text-[10px] font-bold text-lavender-deep">
-                          ✓
-                        </span>
-                        <span className="text-muted">
-                          Sources:{" "}
-                          <strong className="font-medium text-foreground">
-                            {p.allowedSources.join(", ")}
-                          </strong>
-                        </span>
-                      </li>
-
-                      <li className="flex gap-3">
-                        <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-lavender-soft text-[10px] font-bold text-lavender-deep">
-                          ✓
-                        </span>
-                        <span className="text-muted">
-                          <strong className="font-semibold text-foreground">
-                            {p.maxFolders === Infinity
-                              ? "Unlimited"
-                              : p.maxFolders}
-                          </strong>{" "}
-                          {p.maxFolders === Infinity ? "folders" : "folder"}
-                        </span>
-                      </li>
-
-                      <li className="flex gap-3">
-                        <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-lavender-soft text-[10px] font-bold text-lavender-deep">
-                          ✓
-                        </span>
-                        <span className="text-muted">
-                          {p.pdfExport ? (
-                            <>
-                              <strong className="font-medium text-foreground">
-                                PDF & PNG
-                              </strong>{" "}
-                              export
-                            </>
-                          ) : (
-                            "Print from the browser"
-                          )}
-                        </span>
-                      </li>
-
-                      <li className="flex gap-3">
-                        <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-lavender-soft text-[10px] font-bold text-lavender-deep">
-                          ✓
-                        </span>
-                        <span className="text-muted">
-                          {p.shareableLinks ? (
-                            <>
-                              <strong className="font-medium text-foreground">
-                                Shareable
-                              </strong>{" "}
-                              links
-                            </>
-                          ) : (
-                            "Private notes only"
-                          )}
-                        </span>
-                      </li>
+                    <ul className="mt-5 space-y-3 text-sm">
+                      {PLAN_FEATURES[id].map((feature) => (
+                        <li key={feature} className="flex gap-3">
+                          <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-lavender-soft text-[10px] font-bold text-lavender-deep">
+                            ✓
+                          </span>
+                          <span className="text-muted">{feature}</span>
+                        </li>
+                      ))}
                     </ul>
                   </div>
 

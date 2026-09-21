@@ -72,6 +72,10 @@ export async function runJob(jobId: string) {
         style: payload.options.diagramStyle || "handwritten",
         templateId: payload.options.diagramTemplate,
         fromImage,
+        kind: payload.options.diagramKind,
+        colorMode: payload.options.diagramColorMode,
+        labelled: payload.options.diagramLabelled,
+        flowchartSteps: payload.options.flowchartSteps,
       });
       extracted = {
         text: workingPrompt,

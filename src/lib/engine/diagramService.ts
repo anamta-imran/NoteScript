@@ -1,4 +1,14 @@
-import type { DiagramStyle, DiagramTemplateId, NoteBlock } from "@/lib/types";
+import type {
+  DiagramColorMode,
+  DiagramKind,
+  DiagramStyle,
+  DiagramTemplateId,
+  NoteBlock,
+} from "@/lib/types";
+import { AppError } from "@/lib/errors";
+import { getScientificTemplate } from "@/lib/diagrams/registry";
+import { matchScientificTopic } from "@/lib/diagrams/matcher";
+import { sanitizeDiagramText } from "@/lib/diagrams/types";
 
 const KEYWORD_TEMPLATES: Array<{ words: string[]; id: DiagramTemplateId }> = [
   { words: ["water cycle", "evaporation", "condensation", "precipitation", "collection"], id: "water-cycle" },
@@ -34,15 +44,85 @@ export function buildDiagramBlocks(opts: {
   style: DiagramStyle;
   templateId?: DiagramTemplateId;
   fromImage?: boolean;
+  kind?: DiagramKind;
+  colorMode?: DiagramColorMode;
+  labelled?: boolean;
+  flowchartSteps?: string[];
 }): NoteBlock[] {
-  const templateId = pickDiagramFromPrompt(opts.prompt, opts.templateId);
-  const labels = extractLabelHints(opts.prompt);
+  const prompt = sanitizeDiagramText(opts.prompt, 200) || opts.prompt.trim();
+  const wantsScientific =
+    opts.kind === "scientific" ||
+    Boolean(opts.templateId && getScientificTemplate(opts.templateId));
+
+  if (wantsScientific) {
+    let templateId = opts.templateId;
+    let title = prompt || "Educational diagram";
+
+    if (templateId && getScientificTemplate(templateId)) {
+      title = getScientificTemplate(templateId)!.title;
+    } else {
+      const match = matchScientificTopic(prompt);
+      if (!match.ok) {
+        throw new AppError(
+          `That diagram isn't available yet. Try one of our supported educational diagrams: ${match.suggestions.join(", ")}.`,
+          400,
+        );
+      }
+      templateId = match.id;
+      title = match.title;
+    }
+
+    const colorMode: DiagramColorMode = opts.colorMode || "color";
+    const labelled = opts.labelled !== false;
+
+    return [
+      { type: "heading", level: 1, text: title },
+      {
+        type: "diagram",
+        templateId: templateId!,
+        caption: `${title} · ${colorMode === "bw" ? "Black & White" : "Color"} · ${labelled ? "Labelled" : "Unlabelled"}`,
+        style: opts.style,
+        kind: "scientific",
+        colorMode,
+        labelled,
+      },
+      {
+        type: "callout",
+        kind: "important",
+        text: "Deterministic educational SVG template — not generative AI art.",
+      },
+    ];
+  }
+
+  if (opts.kind === "flowchart") {
+    const title = titleFromPrompt(prompt);
+    return [
+      { type: "heading", level: 1, text: title },
+      {
+        type: "diagram",
+        templateId: "flowchart",
+        caption: title,
+        style: opts.style,
+        kind: "flowchart",
+        flowchartSteps: opts.flowchartSteps,
+      },
+      {
+        type: "callout",
+        kind: "important",
+        text: "Rule-based flowchart layout — not generative AI art.",
+      },
+    ];
+  }
+
+  // Legacy keyword templates (CreateNoteForm / OCR reference path)
+  const templateId = pickDiagramFromPrompt(prompt, opts.templateId);
+  const labels = extractLabelHints(prompt);
   const caption = opts.fromImage
     ? "Handwritten study sketch based on your reference (structure preserved, not a pixel copy)."
     : `Study diagram · ${opts.style}`;
 
   const blocks: NoteBlock[] = [
-    { type: "heading", level: 1, text: titleFromPrompt(opts.prompt) },
+    { type: "heading", level: 1, text: titleFromPrompt(prompt) },
     {
       type: "diagram",
       templateId,

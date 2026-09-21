@@ -122,4 +122,13 @@ body {
   body { background: white; }
   .no-print { display: none !important; }
   .note-page { box-shadow: none; break-after: page; width: 100%; }
+  .diagram-print-root {
+    border: none !important;
+    box-shadow: none !important;
+    background: white !important;
+  }
+  .diagram-print-root svg {
+    max-width: 100%;
+    max-height: 90vh;
+  }
 }

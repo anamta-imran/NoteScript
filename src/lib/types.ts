@@ -87,7 +87,28 @@ export type DiagramTemplateId =
   | "timeline"
   | "algorithm-box"
   | "water-cycle"
-  | "blank-labeled";
+  | "blank-labeled"
+  | "sci-heart"
+  | "sci-kidney"
+  | "sci-liver"
+  | "sci-eye"
+  | "sci-brain"
+  | "sci-neuron"
+  | "sci-plant-cell"
+  | "sci-animal-cell"
+  | "sci-leaf"
+  | "sci-flower"
+  | "sci-digestive"
+  | "sci-respiratory"
+  | "sci-ear"
+  | "sci-tooth"
+  | "sci-dna"
+  | "sci-lungs"
+  | "sci-stomach"
+  | "sci-mitochondria";
+
+export type DiagramColorMode = "color" | "bw";
+export type DiagramKind = "flowchart" | "scientific";
 
 export type NoteBlock =
   | { type: "heading"; level: 1 | 2 | 3; text: string; chapterId?: string }
@@ -114,7 +135,16 @@ export type NoteBlock =
     }
   | { type: "timeline"; events: { date: string; event: string }[] }
   | { type: "code"; code: string }
-  | { type: "diagram"; templateId: DiagramTemplateId; caption?: string; style?: DiagramStyle }
+  | {
+      type: "diagram";
+      templateId: DiagramTemplateId;
+      caption?: string;
+      style?: DiagramStyle;
+      kind?: DiagramKind;
+      colorMode?: DiagramColorMode;
+      labelled?: boolean;
+      flowchartSteps?: string[];
+    }
   | { type: "timestamp"; seconds: number; label: string; videoId?: string }
   | { type: "callout"; kind: HighlightKind; text: string }
   | { type: "chemistry-equation"; expression: string };
@@ -164,6 +194,10 @@ export type GenerationOptions = {
   diagramTemplate?: DiagramTemplateId;
   diagramStyle?: DiagramStyle;
   diagramPrompt?: string;
+  diagramKind?: DiagramKind;
+  diagramColorMode?: DiagramColorMode;
+  diagramLabelled?: boolean;
+  flowchartSteps?: string[];
 };
 
 export type ExtractedContent = {

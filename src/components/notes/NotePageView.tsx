@@ -125,7 +125,14 @@ function BlockView({ block }: { block: NoteBlock }) {
     case "diagram":
       return (
         <figure className="mb-3">
-          <DiagramSvg id={block.templateId} />
+          <DiagramSvg
+            id={block.templateId}
+            colorMode={block.colorMode}
+            labelled={block.labelled !== false}
+            caption={block.caption}
+            flowchartTopic={block.caption}
+            flowchartSteps={block.flowchartSteps}
+          />
           {block.caption ? <figcaption className="text-sm opacity-70">{block.caption}</figcaption> : null}
         </figure>
       );

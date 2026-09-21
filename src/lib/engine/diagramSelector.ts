@@ -1,10 +1,20 @@
 import type { DiagramTemplateId, Subject } from "@/lib/types";
 
 const RULES: Array<{ id: DiagramTemplateId; words: string[] }> = [
+  { id: "sci-kidney", words: ["kidney", "renal"] },
+  { id: "sci-heart", words: ["heart", "cardiac"] },
+  { id: "sci-eye", words: ["eye", "retina", "cornea"] },
+  { id: "sci-brain", words: ["brain", "cerebrum", "cerebellum"] },
+  { id: "sci-neuron", words: ["neuron", "axon", "dendrite"] },
+  { id: "sci-plant-cell", words: ["plant cell", "chloroplast"] },
+  { id: "sci-animal-cell", words: ["animal cell"] },
+  { id: "sci-dna", words: ["dna", "double helix"] },
+  { id: "sci-digestive", words: ["digestive system", "digestion"] },
+  { id: "sci-lungs", words: ["lungs", "lung"] },
   { id: "flowchart", words: ["process", "flow", "then", "next", "step"] },
   { id: "process-arrows", words: ["cycle", "photosynthesis", "respiration", "stages"] },
   { id: "cell-simple", words: ["cell", "nucleus", "membrane", "organelle"] },
-  { id: "atom-simple", words: ["atom", "electron", "proton", "nucleus", "orbital"] },
+  { id: "atom-simple", words: ["atom", "electron", "proton", "orbital"] },
   { id: "circuit-simple", words: ["circuit", "voltage", "current", "resistor"] },
   { id: "force-diagram", words: ["force", "newton", "friction", "acceleration"] },
   { id: "timeline", words: ["century", "timeline", "war", "revolution", "year"] },

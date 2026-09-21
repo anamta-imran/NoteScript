@@ -1,7 +1,7 @@
 "use client";
 
-import { CreateNoteForm } from "@/components/notes/CreateNoteForm";
+import { EducationalDiagramStudio } from "@/components/diagrams/EducationalDiagramStudio";
 
 export default function DiagramCreatePage() {
-  return <CreateNoteForm sourceType="diagram" />;
+  return <EducationalDiagramStudio />;
 }

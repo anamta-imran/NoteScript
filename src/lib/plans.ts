@@ -47,20 +47,21 @@ export type PlanLimits = {
 };
 
 const FREE_STYLES: HandwritingStyle[] = ["clean-study", "simple-student"];
+/** Student gets 10 handwriting styles (within the marketed 8–10 range). */
 const STUDENT_STYLES: HandwritingStyle[] = [
   ...FREE_STYLES,
   "neat-notes",
   "soft-handwritten",
   "exam-notes",
+  "compact-revision",
+  "academic",
+  "fine-liner",
+  "study-journal",
+  "realistic-pen",
 ];
 const PRO_STYLES: HandwritingStyle[] = [
   ...STUDENT_STYLES,
-  "realistic-pen",
-  "fine-liner",
-  "academic",
-  "compact-revision",
   "creative-handwriting",
-  "study-journal",
   "detailed-handwriting",
   "personal-notes",
   "casual-notebook",
@@ -113,12 +114,12 @@ export const PLANS: Record<PlanId, PlanLimits> = {
   student: {
     id: "student",
     name: "Student",
-    monthlyPriceUsd: 4.99,
-    annualPriceUsd: 39.99,
+    monthlyPriceUsd: 14.99,
+    annualPriceUsd: 99.99,
     textGenerations: null,
     textLimitIsLifetime: false,
-    imageGenerationsPerMonth: 3,
-    diagramGenerationsPerMonth: 3,
+    imageGenerationsPerMonth: 10,
+    diagramGenerationsPerMonth: 10,
     allowedSources: ["text", "pdf", "image", "diagram"],
     handwritingStyles: STUDENT_STYLES,
     noteLengths: ["quick", "standard", "detailed"],
@@ -148,8 +149,8 @@ export const PLANS: Record<PlanId, PlanLimits> = {
   pro: {
     id: "pro",
     name: "Pro",
-    monthlyPriceUsd: 9.99,
-    annualPriceUsd: 79.99,
+    monthlyPriceUsd: 18.99,
+    annualPriceUsd: 139.99,
     textGenerations: null,
     textLimitIsLifetime: false,
     imageGenerationsPerMonth: null,

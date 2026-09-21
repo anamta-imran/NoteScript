@@ -166,7 +166,7 @@ export async function assertCanGenerate(
       throw new AppError(
         usage.imageLimit === 0
           ? "Image-to-notes is not included in your plan. Upgrade to Student or Pro."
-          : "You've used your 3 image-to-notes generations this month. Upgrade to Pro for unlimited images.",
+          : `You've used your ${usage.imageLimit} image-to-notes generations this month. Upgrade to Pro for unlimited images.`,
         402,
         "USAGE_LIMIT",
       );
@@ -179,7 +179,7 @@ export async function assertCanGenerate(
       throw new AppError(
         usage.diagramLimit === 0
           ? "Diagrams are not included in the Free plan. Upgrade to Student or Pro."
-          : "You've used your 3 diagram generations this month. Upgrade to Pro for unlimited diagrams.",
+          : `You've used your ${usage.diagramLimit} diagram generations this month. Upgrade to Pro for unlimited diagrams.`,
         402,
         "USAGE_LIMIT",
       );

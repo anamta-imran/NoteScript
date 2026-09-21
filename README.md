@@ -53,10 +53,14 @@ Webhook URL: `POST /api/webhooks/paddle`
 
 | | Free | Student | Pro |
 |---|---|---|---|
+| Price (monthly) | $0 | $14.99 | $18.99 |
+| Price (annual) | $0 | $99.99 | $139.99 |
 | Text | 3 total | Unlimited | Unlimited |
 | PDF | — | Yes | Yes |
-| Image | — | 3/mo | Unlimited |
+| Image | — | 10/mo | Unlimited |
 | YouTube | — | — | Yes |
-| Diagrams | — | 3/mo | Unlimited |
+| Diagrams | — | 10/mo | Unlimited |
 
 Plans activate only after verified Paddle webhooks — never from frontend alone.
+
+Displayed marketing prices come from `PLANS` in `src/lib/plans.ts`. Checkout uses env-based Paddle Price IDs (`PADDLE_PRICE_STUDENT_MONTHLY`, `PADDLE_PRICE_STUDENT_ANNUAL`, `PADDLE_PRICE_PRO_MONTHLY`, `PADDLE_PRICE_PRO_ANNUAL`) — update those in Paddle Dashboard and env vars when live prices change.

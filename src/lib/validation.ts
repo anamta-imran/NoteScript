@@ -56,12 +56,34 @@ export const generationOptionsSchema = z.object({
       "algorithm-box",
       "water-cycle",
       "blank-labeled",
+      "sci-heart",
+      "sci-kidney",
+      "sci-liver",
+      "sci-eye",
+      "sci-brain",
+      "sci-neuron",
+      "sci-plant-cell",
+      "sci-animal-cell",
+      "sci-leaf",
+      "sci-flower",
+      "sci-digestive",
+      "sci-respiratory",
+      "sci-ear",
+      "sci-tooth",
+      "sci-dna",
+      "sci-lungs",
+      "sci-stomach",
+      "sci-mitochondria",
     ])
     .optional(),
   diagramStyle: z
     .enum(["clean-study", "handwritten", "exam-diagram", "detailed", "minimal"])
     .optional(),
   diagramPrompt: z.string().max(4000).optional(),
+  diagramKind: z.enum(["flowchart", "scientific"]).optional(),
+  diagramColorMode: z.enum(["color", "bw"]).optional(),
+  diagramLabelled: z.boolean().optional(),
+  flowchartSteps: z.array(z.string().max(80)).max(12).optional(),
 });
 
 export const createJobSchema = z.object({

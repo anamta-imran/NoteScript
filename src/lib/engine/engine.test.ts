@@ -71,8 +71,8 @@ describe("plans", () => {
     expect(getPlan("free").allowedSources).toEqual(["text"]);
     expect(getPlan("student").allowedSources.includes("youtube")).toBe(false);
     expect(getPlan("pro").allowedSources.includes("youtube")).toBe(true);
-    expect(getPlan("student").imageGenerationsPerMonth).toBe(3);
-    expect(getPlan("student").diagramGenerationsPerMonth).toBe(3);
+    expect(getPlan("student").imageGenerationsPerMonth).toBe(10);
+    expect(getPlan("student").diagramGenerationsPerMonth).toBe(10);
     expect(getPlan("pro").textGenerations).toBeNull();
   });
 });

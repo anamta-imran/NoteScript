@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
+import { PLANS } from "@/lib/plans";
+import { formatUsd } from "@/lib/utils";
 
 const steps = [
   {
@@ -417,7 +419,7 @@ export default function HomePage() {
         <p className="text-sm font-semibold">Free</p>
 
         <div className="mt-5 flex items-end gap-2">
-          <span className="text-4xl font-semibold">$0</span>
+          <span className="text-4xl font-semibold">{formatUsd(PLANS.free.monthlyPriceUsd)}</span>
           <span className="pb-1 text-sm text-muted">forever</span>
         </div>
 
@@ -437,7 +439,7 @@ export default function HomePage() {
         <p className="text-sm font-semibold">Student</p>
 
         <div className="mt-5 flex items-end gap-2">
-          <span className="text-4xl font-semibold">$4.99</span>
+          <span className="text-4xl font-semibold">{formatUsd(PLANS.student.monthlyPriceUsd)}</span>
           <span className="pb-1 text-sm text-muted">/ month</span>
         </div>
 
@@ -455,7 +457,7 @@ export default function HomePage() {
         </Link>
 
         <p className="mt-3 text-center text-xs text-muted">
-          Or $39.99/year
+          Or {formatUsd(PLANS.student.annualPriceUsd)}/year
         </p>
       </div>
 
@@ -468,7 +470,7 @@ export default function HomePage() {
         <p className="text-sm font-semibold">Pro</p>
 
         <div className="mt-5 flex items-end gap-2">
-          <span className="text-4xl font-semibold">$9.99</span>
+          <span className="text-4xl font-semibold">{formatUsd(PLANS.pro.monthlyPriceUsd)}</span>
           <span className="pb-1 text-sm text-muted">/ month</span>
         </div>
 
@@ -486,7 +488,7 @@ export default function HomePage() {
         </Link>
 
         <p className="mt-3 text-center text-xs text-muted">
-          Or $79.99/year
+          Or {formatUsd(PLANS.pro.annualPriceUsd)}/year
         </p>
       </div>
     </div>
