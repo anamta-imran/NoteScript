@@ -18,7 +18,9 @@ export default function SignupPage() {
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  /** Shown only after checkout fails to open, or after the overlay is closed/abandoned. */
   const [pendingCheckout, setPendingCheckout] = useState(false);
+  const [checkoutEmail, setCheckoutEmail] = useState("");
 
   async function openPaddleCheckout(
     email: string,
@@ -54,6 +56,23 @@ export default function SignupPage() {
     const paddle: Paddle | undefined = await initializePaddle({
       environment: process.env.NEXT_PUBLIC_PADDLE_ENV === "production" ? "production" : "sandbox",
       token,
+      eventCallback: (event) => {
+        // Keep the amber fallback hidden while the overlay is open.
+        if (event.name === "checkout.closed") {
+          setPendingCheckout(true);
+          return;
+        }
+        if (event.name === "checkout.completed") {
+          // Plan remains Free until the Paddle webhook confirms; dashboard is fine.
+          setPendingCheckout(false);
+          window.location.href = "/dashboard";
+          return;
+        }
+        if (event.name === "checkout.error" || event.name === "checkout.failed") {
+          setPendingCheckout(true);
+          setError("Checkout could not be completed. You can try again, or continue on Free.");
+        }
+      },
     });
 
     if (!paddle) {
@@ -107,9 +126,11 @@ export default function SignupPage() {
         selectedPlan !== "free" &&
         (selectedCycle === "monthly" || selectedCycle === "annual")
       ) {
+        setCheckoutEmail(email);
         try {
+          // Do not show the amber panel here — overlay is opening successfully.
+          setPendingCheckout(false);
           await openPaddleCheckout(email, selectedPlan, selectedCycle);
-          setPendingCheckout(true);
         } catch (checkoutErr) {
           setPendingCheckout(true);
           setError(
@@ -194,16 +215,23 @@ export default function SignupPage() {
                 <Button
                   type="button"
                   onClick={async () => {
+                    setError("");
+                    // Hide amber panel while reopening so it is not covered again.
+                    setPendingCheckout(false);
+                    const email =
+                      checkoutEmail ||
+                      String(
+                        (document.getElementById("email") as HTMLInputElement)
+                          ?.value || "",
+                      );
                     try {
                       await openPaddleCheckout(
-                        String(
-                          (document.getElementById("email") as HTMLInputElement)
-                            ?.value || "",
-                        ),
+                        email,
                         selectedPlan || "student",
                         selectedCycle || "monthly",
                       );
                     } catch (e) {
+                      setPendingCheckout(true);
                       setError(
                         e instanceof Error ? e.message : "Checkout failed.",
                       );
