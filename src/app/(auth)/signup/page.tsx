@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { FormEvent, useRef, useState } from "react";
 import { initializePaddle, type Paddle } from "@paddle/paddle-js";
 
 import { BrandLogo } from "@/components/brand/BrandLogo";
 import { Button } from "@/components/ui/Button";
 import { Field, Input } from "@/components/ui/Field";
 import { api } from "@/lib/api";
+import { waitForPaidPlan } from "@/lib/wait-for-paid-plan";
 
 export default function SignupPage() {
   const searchParams = useSearchParams();
@@ -20,6 +21,9 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   /** Shown only after checkout fails to open, or after the overlay is closed/abandoned. */
   const [pendingCheckout, setPendingCheckout] = useState(false);
+  /** Payment succeeded in Paddle; waiting for webhook to update planId. */
+  const [confirmingPayment, setConfirmingPayment] = useState(false);
+  const confirmingPaymentRef = useRef(false);
   const [checkoutEmail, setCheckoutEmail] = useState("");
 
   async function openPaddleCheckout(
@@ -59,16 +63,30 @@ export default function SignupPage() {
       eventCallback: (event) => {
         // Keep the amber fallback hidden while the overlay is open.
         if (event.name === "checkout.closed") {
-          setPendingCheckout(true);
+          if (!confirmingPaymentRef.current) setPendingCheckout(true);
           return;
         }
         if (event.name === "checkout.completed") {
-          // Plan remains Free until the Paddle webhook confirms; dashboard is fine.
+          // Wait for the webhook to apply student/pro before opening the dashboard.
+          confirmingPaymentRef.current = true;
           setPendingCheckout(false);
-          window.location.href = "/dashboard";
+          setConfirmingPayment(true);
+          setError("");
+          void waitForPaidPlan()
+            .then(() => {
+              window.location.href = "/dashboard";
+            })
+            .catch(() => {
+              confirmingPaymentRef.current = false;
+              setConfirmingPayment(false);
+              setPendingCheckout(true);
+              setError("Payment confirmation was interrupted. Refresh the dashboard in a moment.");
+            });
           return;
         }
         if (event.name === "checkout.error" || event.name === "checkout.failed") {
+          confirmingPaymentRef.current = false;
+          setConfirmingPayment(false);
           setPendingCheckout(true);
           setError("Checkout could not be completed. You can try again, or continue on Free.");
         }
@@ -200,7 +218,18 @@ export default function SignupPage() {
             </div>
           </div>
 
-          {pendingCheckout ? (
+          {confirmingPayment ? (
+            <div className="mt-7 space-y-2 rounded-2xl border border-[#e9e0f0] bg-[#faf8fc] p-4 text-sm">
+              <p className="font-medium text-[#3f3545]">Confirming payment…</p>
+              <p className="text-[#756d7d]">
+                Payment succeeded. Unlocking your{" "}
+                {selectedPlan === "pro" ? "Pro" : "Student"} plan — this usually takes a few
+                seconds.
+              </p>
+            </div>
+          ) : null}
+
+          {pendingCheckout && !confirmingPayment ? (
             <div className="mt-7 space-y-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm">
               <p className="font-medium text-[#3f3545]">
                 Your account has been created, but your{" "}

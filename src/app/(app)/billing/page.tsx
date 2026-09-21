@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/EmptyState";
 import { useToast } from "@/components/ui/Toast";
 import { formatDate, formatUsd } from "@/lib/utils";
 import { PLANS } from "@/lib/plans";
+import { waitForPaidPlan } from "@/lib/wait-for-paid-plan";
 import type { BillingCycle, PlanId, PublicUser, UsageSnapshot } from "@/lib/types";
 
 type BillingData = {
@@ -29,7 +30,11 @@ type BillingData = {
   }[];
 };
 
-async function openCheckout(planId: PlanId, billingCycle: BillingCycle) {
+async function openCheckout(
+  planId: PlanId,
+  billingCycle: BillingCycle,
+  onPaymentCompleted: () => void,
+) {
   const checkoutData = await api<{
     priceId: string;
     customData: Record<string, string>;
@@ -43,6 +48,11 @@ async function openCheckout(planId: PlanId, billingCycle: BillingCycle) {
   const paddle: Paddle | undefined = await initializePaddle({
     environment: process.env.NEXT_PUBLIC_PADDLE_ENV === "production" ? "production" : "sandbox",
     token,
+    eventCallback: (event) => {
+      if (event.name === "checkout.completed") {
+        onPaymentCompleted();
+      }
+    },
   });
   if (!paddle) throw new Error("Could not initialize Paddle.");
   paddle.Checkout.open({
@@ -60,7 +70,26 @@ function BillingPageInner() {
   const [error, setError] = useState("");
   const [cycle, setCycle] = useState<BillingCycle>("monthly");
   const [busy, setBusy] = useState(false);
+  const [confirmingPayment, setConfirmingPayment] = useState(false);
+  const confirmingPaymentRef = useRef(false);
   const autoCheckoutStarted = useRef(false);
+
+  function beginConfirmingPayment() {
+    if (confirmingPaymentRef.current) return;
+    confirmingPaymentRef.current = true;
+    setConfirmingPayment(true);
+    setBusy(true);
+    void waitForPaidPlan()
+      .then(() => {
+        window.location.href = "/dashboard";
+      })
+      .catch(() => {
+        confirmingPaymentRef.current = false;
+        setConfirmingPayment(false);
+        setBusy(false);
+        push("Payment confirmation was interrupted. Refresh billing in a moment.", "err");
+      });
+  }
 
   useEffect(() => {
     const qCycle = searchParams.get("cycle");
@@ -76,7 +105,7 @@ function BillingPageInner() {
   }, []);
 
   useEffect(() => {
-    if (!data || autoCheckoutStarted.current || busy) return;
+    if (!data || autoCheckoutStarted.current || busy || confirmingPayment) return;
     const qPlan = searchParams.get("plan");
     const qCycle = searchParams.get("cycle");
     if (qPlan !== "student" && qPlan !== "pro") return;
@@ -87,10 +116,12 @@ function BillingPageInner() {
     autoCheckoutStarted.current = true;
     setCycle(qCycle);
     setBusy(true);
-    openCheckout(qPlan, qCycle)
+    openCheckout(qPlan, qCycle, beginConfirmingPayment)
       .catch((e) => push(e instanceof Error ? e.message : "Checkout failed.", "err"))
-      .finally(() => setBusy(false));
-  }, [data, searchParams, busy, push]);
+      .finally(() => {
+        if (!confirmingPaymentRef.current) setBusy(false);
+      });
+  }, [data, searchParams, busy, confirmingPayment, push]);
 
   async function portal() {
     setBusy(true);
@@ -122,11 +153,12 @@ function BillingPageInner() {
   async function upgrade(planId: PlanId) {
     setBusy(true);
     try {
-      await openCheckout(planId, cycle);
+      await openCheckout(planId, cycle, beginConfirmingPayment);
     } catch (e) {
       push(e instanceof Error ? e.message : "Checkout failed.", "err");
-    } finally {
       setBusy(false);
+    } finally {
+      if (!confirmingPaymentRef.current) setBusy(false);
     }
   }
 
@@ -154,6 +186,15 @@ function BillingPageInner() {
         <p className="mt-1 text-sm text-muted">Current plan, usage, and payment history.</p>
       </div>
 
+      {confirmingPayment ? (
+        <div className="rounded-2xl border border-line bg-white p-4 text-sm">
+          <p className="font-medium text-ink">Confirming payment…</p>
+          <p className="mt-1 text-muted">
+            Payment succeeded. Unlocking your plan — this usually takes a few seconds. You will be
+            taken to the dashboard when it is ready.
+          </p>
+        </div>
+      ) : null}
       <section className="rounded-2xl border border-line bg-white p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
