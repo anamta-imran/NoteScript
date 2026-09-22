@@ -44,6 +44,14 @@ export async function createSession(userId: string) {
 
 export async function clearSession() {
   const jar = await cookies();
+  // Explicit expire so browsers drop the cookie reliably across environments.
+  jar.set(COOKIE, "", {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: 0,
+  });
   jar.delete(COOKIE);
 }
 

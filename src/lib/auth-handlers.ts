@@ -69,7 +69,9 @@ export async function POST_LOGIN(req: NextRequest) {
 
 export async function POST_LOGOUT() {
   await clearSession();
-  return json({ ok: true });
+  const res = json({ ok: true });
+  res.headers.set("Cache-Control", "no-store, no-cache, must-revalidate");
+  return res;
 }
 
 export async function GET_ME() {

@@ -51,7 +51,11 @@ export async function middleware(req: NextRequest) {
     return loginRedirect(req, pathname);
   }
 
-  return NextResponse.next();
+  const requestHeaders = new Headers(req.headers);
+  requestHeaders.set("x-pathname", `${pathname}${req.nextUrl.search || ""}`);
+  return NextResponse.next({
+    request: { headers: requestHeaders },
+  });
 }
 
 export const config = {

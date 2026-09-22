@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { FormEvent, useState } from "react";
 
 import { BrandLogo } from "@/components/brand/BrandLogo";
@@ -9,9 +9,15 @@ import { Button } from "@/components/ui/Button";
 import { Field, Input } from "@/components/ui/Field";
 import { api } from "@/lib/api";
 
+function safeNextPath(raw: string | null): string {
+  if (!raw || !raw.startsWith("/") || raw.startsWith("//")) return "/dashboard";
+  return raw;
+}
+
 export default function LoginPage() {
-  const router = useRouter();
-  const next = useSearchParams().get("next") || "/dashboard";
+  const searchParams = useSearchParams();
+  const next = safeNextPath(searchParams.get("next"));
+  const signedOut = searchParams.get("signedOut") === "1";
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -33,59 +39,56 @@ export default function LoginPage() {
         }),
       });
 
-      router.push(next);
-      router.refresh();
+      window.location.assign(next);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not sign in.");
-    } finally {
       setLoading(false);
     }
   }
 
+  const signupHref =
+    next && next !== "/dashboard" ? `/signup?next=${encodeURIComponent(next)}` : "/signup";
+
   return (
     <main className="relative flex min-h-[calc(100vh-80px)] items-center justify-center overflow-hidden bg-[#fcfbfe] px-4 py-12">
-      {/* Background glow */}
       <div className="pointer-events-none absolute left-1/2 top-[-180px] h-[420px] w-[700px] -translate-x-1/2 rounded-full bg-[#eee7f8] opacity-70 blur-3xl" />
 
       <div className="relative w-full max-w-md">
-        {/* Brand */}
         <div className="mb-8 flex justify-center">
           <BrandLogo href="/" size="lg" priority className="text-[#292230]" />
         </div>
 
-        {/* Card */}
         <div className="rounded-[28px] border border-[#e9e3ef] bg-white p-7 shadow-[0_20px_70px_rgba(62,39,82,0.09)] sm:p-9">
           <div className="text-center">
-            <span className="inline-flex rounded-full bg-[#f0e9f8] px-3 py-1 text-xs font-semibold text-[#72558f]">
-              WELCOME BACK
-            </span>
+            {signedOut ? (
+              <span className="inline-flex rounded-full bg-[#e4f3ea] px-3 py-1 text-xs font-semibold text-[#3d7a5a]">
+                SIGNED OUT
+              </span>
+            ) : (
+              <span className="inline-flex rounded-full bg-[#f0e9f8] px-3 py-1 text-xs font-semibold text-[#72558f]">
+                WELCOME BACK
+              </span>
+            )}
 
             <h1 className="mt-4 text-3xl font-semibold tracking-tight text-[#292230]">
-              Log in to NoteScript
+              {signedOut ? "You’ve been signed out." : "Log in to NoteScript"}
             </h1>
 
             <p className="mt-2 text-sm leading-6 text-[#756d7d]">
-              Pick up right where you left off.
+              {signedOut
+                ? "Sign in to continue to NoteScript."
+                : "Pick up right where you left off."}
             </p>
           </div>
 
           <form className="mt-8 space-y-5" onSubmit={onSubmit}>
             <Field label="Email" htmlFor="email">
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-              />
+              <Input id="email" name="email" type="email" autoComplete="email" required />
             </Field>
 
             <div>
               <div className="flex items-center justify-between">
-                <label
-                  htmlFor="password"
-                  className="text-sm font-medium text-[#3f3545]"
-                >
+                <label htmlFor="password" className="text-sm font-medium text-[#3f3545]">
                   Password
                 </label>
 
@@ -119,7 +122,7 @@ export default function LoginPage() {
               className="w-full shadow-[0_8px_25px_rgba(126,95,160,0.22)]"
               disabled={loading}
             >
-              {loading ? "Signing in…" : "Log in"}
+              {loading ? "Signing in…" : "Sign In"}
             </Button>
           </form>
 
@@ -129,10 +132,14 @@ export default function LoginPage() {
             <div className="h-px flex-1 bg-[#eee8f2]" />
           </div>
 
-          <p className="text-center text-sm text-[#756d7d]">
+          <Button href={signupHref} variant="secondary" className="w-full">
+            Create Account
+          </Button>
+
+          <p className="mt-4 text-center text-sm text-[#756d7d]">
             New to NoteScript?{" "}
             <Link
-              href="/signup"
+              href={signupHref}
               className="font-semibold text-[#80639d] transition hover:text-[#644b79]"
             >
               Create an account

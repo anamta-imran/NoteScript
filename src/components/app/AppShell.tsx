@@ -1,12 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { api } from "@/lib/api";
-import { Button } from "@/components/ui/Button";
 import { PlanBadge } from "@/components/billing/PlanBadge";
 import { PlanActivationGuard } from "@/components/billing/PlanActivationGuard";
+import { LogoutButton } from "@/components/app/LogoutButton";
+import { Button } from "@/components/ui/Button";
 import { getPlanTheme } from "@/lib/plan-theme";
 import { cn } from "@/lib/utils";
 import { t, dirForInterface } from "@/lib/i18n";
@@ -29,17 +29,11 @@ export function AppShell({
   user: PublicUser;
 }) {
   const path = usePathname();
-  const router = useRouter();
   const [open, setOpen] = useState(false);
   const lang = (user.interfaceLanguage || "en") as InterfaceLanguage;
   const dir = dirForInterface(lang);
   const theme = getPlanTheme(user.planId);
   const isPro = user.planId === "pro";
-
-  async function logout() {
-    await api("/api/auth/logout", { method: "POST" });
-    router.push("/login");
-  }
 
   const links = (
     <nav className="flex flex-col gap-1">
@@ -82,14 +76,12 @@ export function AppShell({
               Pro workspace
             </p>
           ) : null}
-          <div className="mt-8">{links}</div>
-          <Button
-            variant="ghost"
-            className={cn("mt-8 w-full", isPro && "text-[#c9bfd4] hover:bg-white/5 hover:text-white")}
-            onClick={logout}
-          >
-            {t(lang, "logout")}
-          </Button>
+          <div className="mt-8 flex flex-1 flex-col">
+            {links}
+            <div className="mt-8 border-t border-current/10 pt-6">
+              <LogoutButton planId={user.planId} label={t(lang, "logout")} />
+            </div>
+          </div>
         </aside>
         <div>
           <header
@@ -106,7 +98,17 @@ export function AppShell({
             </Link>
             <div className="flex items-center gap-2">
               <PlanBadge planId={user.planId} />
-              <Button variant="secondary" size="sm" onClick={() => setOpen(true)} aria-expanded={open}>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setOpen(true)}
+                aria-expanded={open}
+                className={
+                  isPro
+                    ? "border-white/25 bg-white/12 text-white hover:bg-white/20"
+                    : undefined
+                }
+              >
                 Menu
               </Button>
             </div>
@@ -118,15 +120,20 @@ export function AppShell({
                 aria-label="Close menu"
                 onClick={() => setOpen(false)}
               />
-              <div className={cn("absolute inset-y-0 start-0 w-72 p-4 shadow-xl", theme.asideClass)}>
+              <div
+                className={cn(
+                  "absolute inset-y-0 start-0 flex w-72 flex-col p-4 shadow-xl",
+                  theme.asideClass,
+                )}
+              >
                 <div className="mb-4 flex items-center justify-between">
                   <span className={cn("font-hand-clean text-xl", theme.brandClass)}>NoteScript</span>
                   <PlanBadge planId={user.planId} />
                 </div>
                 {links}
-                <Button variant="ghost" className="mt-6 w-full" onClick={logout}>
-                  {t(lang, "logout")}
-                </Button>
+                <div className="mt-auto border-t border-current/10 pt-6">
+                  <LogoutButton planId={user.planId} label={t(lang, "logout")} />
+                </div>
               </div>
             </div>
           ) : null}
