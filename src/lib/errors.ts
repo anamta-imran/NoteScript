@@ -21,6 +21,24 @@ export class ForbiddenError extends AppError {
   }
 }
 
+/** Structured entitlement denial for upgrade UX (no sensitive billing fields). */
+export class FeatureNotAvailableError extends AppError {
+  constructor(
+    public feature: string,
+    public requiredPlan: "free" | "student" | "pro",
+    public currentPlan: "free" | "student" | "pro",
+    message?: string,
+  ) {
+    super(
+      message ||
+        `This feature requires the ${requiredPlan} plan.`,
+      403,
+      "FEATURE_NOT_AVAILABLE",
+    );
+    this.name = "FeatureNotAvailableError";
+  }
+}
+
 export class NotFoundError extends AppError {
   constructor(message = "We could not find that.") {
     super(message, 404, "NOT_FOUND");

@@ -2,7 +2,8 @@ import { Usage } from "@/models/Usage";
 import { Folder } from "@/models/Folder";
 import type { UserDoc } from "@/models/User";
 import { getPlan, normalizeHandwritingStyle } from "./plans";
-import { AppError, ForbiddenError } from "./errors";
+import { AppError, FeatureNotAvailableError, ForbiddenError } from "./errors";
+import { requiredPlanForSource } from "./entitlements";
 import type { GenerationOptions, PlanId, SourceType, UsageSnapshot } from "./types";
 import { endOfUtcMonth, startOfUtcMonth } from "./utils";
 import mongoose from "mongoose";
@@ -107,13 +108,14 @@ export async function assertCanGenerate(
   const style = normalizeHandwritingStyle(options.handwritingStyle);
 
   if (!plan.allowedSources.includes(sourceType)) {
+    const required = requiredPlanForSource(sourceType);
     const hint =
       sourceType === "youtube"
         ? "YouTube-to-notes is a Pro feature."
         : sourceType === "diagram"
           ? "Diagrams require Student or Pro."
           : `The ${plan.name} plan does not include ${sourceType} notes. Upgrade to unlock this source.`;
-    throw new ForbiddenError(hint);
+    throw new FeatureNotAvailableError(sourceType, required, plan.id, hint);
   }
 
   if (!plan.handwritingStyles.includes(style) && !plan.handwritingStyles.includes(options.handwritingStyle)) {

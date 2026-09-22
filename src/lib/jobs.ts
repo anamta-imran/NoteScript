@@ -134,14 +134,37 @@ export async function runJob(jobId: string) {
     await setStage(jobId, "Structuring notes...", 45);
     let structured: StructuredNote;
     if (forcedBlocks) {
+      const title = (payload.title || extracted.titleHint || "Study diagram").slice(0, 160);
+      const study =
+        (extracted.text || "").trim().split(/\s+/).length >= 20
+          ? processExtractedContent(extracted, {
+              ...payload.options,
+              diagrams: false,
+            })
+          : null;
+      const studyRest = (study?.blocks || []).filter(
+        (b, idx) => !(idx === 0 && b.type === "heading" && b.level === 1),
+      );
+      const diagramRest = forcedBlocks.filter(
+        (b, idx) => !(idx === 0 && b.type === "heading" && b.level === 1),
+      );
       structured = {
-        title: (payload.title || extracted.titleHint || "Study diagram").slice(0, 160),
-        subject: "general",
+        title,
+        subject: study?.subject || "general",
         language: payload.options.language,
-        chapters: [],
-        blocks: forcedBlocks,
-        keywords: [],
+        chapters: study?.chapters || [],
+        keywords: study?.keywords || [],
         source: { type: "diagram", fileName: extracted.fileName },
+        blocks: [
+          { type: "heading", level: 1, text: title },
+          ...diagramRest,
+          ...(studyRest.length
+            ? [
+                { type: "heading" as const, level: 2 as const, text: "Notes from the diagram" },
+                ...studyRest,
+              ]
+            : []),
+        ],
       };
     } else {
       structured = processExtractedContent(extracted, payload.options);

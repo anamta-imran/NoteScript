@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ZodError } from "zod";
-import { publicErrorMessage } from "./errors";
+import { FeatureNotAvailableError, publicErrorMessage } from "./errors";
 import { clientIp, rateLimit } from "./rate-limit";
 
 export function json<T>(data: T, status = 200) {
@@ -12,6 +12,18 @@ export function handleRouteError(error: unknown) {
     return json(
       { error: error.issues[0]?.message || "Invalid input.", code: "VALIDATION" },
       400,
+    );
+  }
+  if (error instanceof FeatureNotAvailableError) {
+    return json(
+      {
+        error: error.message,
+        code: error.code,
+        feature: error.feature,
+        requiredPlan: error.requiredPlan,
+        currentPlan: error.currentPlan,
+      },
+      error.status,
     );
   }
   const pub = publicErrorMessage(error);

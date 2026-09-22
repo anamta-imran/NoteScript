@@ -1,0 +1,420 @@
+{
+  "meta": {
+    "base": "https://notescript-xi.vercel.app",
+    "at": "2026-09-21T12:44:21.764Z",
+    "secretsPrinted": false
+  },
+  "priceIdsVerified": {
+    "student_monthly": "pri_01m3…eg48 (len=30)",
+    "student_annual": "pri_01m3…3bq0 (len=29)",
+    "pro_monthly": "pri_01m3…ha79 (len=30)",
+    "pro_annual": "pri_01m3…bz4b (len=30)"
+  },
+  "notes": [],
+  "results": [
+    {
+      "area": "11.FINAL",
+      "check": "health",
+      "status": "PASS",
+      "detail": "{\"ok\":true,\"authConfigured\":true}",
+      "evidence": "/api/health"
+    },
+    {
+      "area": "1.FREE",
+      "check": "starts on free",
+      "status": "PASS",
+      "detail": "planId=free",
+      "evidence": "POST /api/auth/signup"
+    },
+    {
+      "area": "1.FREE",
+      "check": "dashboard/me shows free",
+      "status": "PASS",
+      "detail": "status=200 planId=free",
+      "evidence": "GET /api/auth/me"
+    },
+    {
+      "area": "1.FREE",
+      "check": "billing UI data shows free",
+      "status": "PASS",
+      "detail": "status=200 plan=free paymentsConfigured=true",
+      "evidence": "GET /api/billing"
+    },
+    {
+      "area": "1.FREE",
+      "check": "server blocks image",
+      "status": "PASS",
+      "detail": "status=403 code=FORBIDDEN msg=The Free plan does not include image notes. Upgrade to unlock this source.",
+      "evidence": "POST /api/jobs"
+    },
+    {
+      "area": "1.FREE",
+      "check": "server blocks diagram",
+      "status": "PASS",
+      "detail": "status=403 code=FORBIDDEN msg=Diagrams require Student or Pro.",
+      "evidence": "POST /api/jobs"
+    },
+    {
+      "area": "1.FREE",
+      "check": "server blocks youtube",
+      "status": "PASS",
+      "detail": "status=403 code=FORBIDDEN msg=YouTube-to-notes is a Pro feature.",
+      "evidence": "POST /api/jobs"
+    },
+    {
+      "area": "1.FREE",
+      "check": "server blocks pdf",
+      "status": "PASS",
+      "detail": "status=403 code=FORBIDDEN msg=The Free plan does not include pdf notes. Upgrade to unlock this source.",
+      "evidence": "POST /api/jobs"
+    },
+    {
+      "area": "1.FREE",
+      "check": "text generation allowed",
+      "status": "PASS",
+      "detail": "status=202 code=n/a",
+      "evidence": "POST /api/jobs"
+    },
+    {
+      "area": "1.FREE",
+      "check": "pro handwriting style blocked",
+      "status": "PASS",
+      "detail": "status=403 code=FORBIDDEN",
+      "evidence": "POST /api/jobs"
+    },
+    {
+      "area": "2.STUDENT_MONTHLY",
+      "check": "checkout API returns configured priceId",
+      "status": "PASS",
+      "detail": "status=200 priceId=pri_01m3…eg48 (len=30) code=n/a",
+      "evidence": "POST /api/billing/checkout"
+    },
+    {
+      "area": "3.STUDENT_ANNUAL",
+      "check": "checkout API returns configured priceId",
+      "status": "PASS",
+      "detail": "status=200 priceId=pri_01m3…3bq0 (len=29) code=n/a",
+      "evidence": "POST /api/billing/checkout"
+    },
+    {
+      "area": "4.PRO_MONTHLY",
+      "check": "checkout API returns configured priceId",
+      "status": "PASS",
+      "detail": "status=200 priceId=pri_01m3…ha79 (len=30) code=n/a",
+      "evidence": "POST /api/billing/checkout"
+    },
+    {
+      "area": "5.PRO_ANNUAL",
+      "check": "checkout API returns configured priceId",
+      "status": "PASS",
+      "detail": "status=200 priceId=pri_01m3…bz4b (len=30) code=n/a",
+      "evidence": "POST /api/billing/checkout"
+    },
+    {
+      "area": "1.FREE",
+      "check": "checkout rejects free plan",
+      "status": "PASS",
+      "detail": "status=400",
+      "evidence": "POST /api/billing/checkout"
+    },
+    {
+      "area": "9.BILLING_API",
+      "check": "invalid planId rejected or unconfigured",
+      "status": "PASS",
+      "detail": "status=503 priceId=(empty)",
+      "evidence": "POST /api/billing/checkout"
+    },
+    {
+      "area": "9.BILLING_API",
+      "check": "billing requires auth",
+      "status": "PASS",
+      "detail": "status=401",
+      "evidence": "GET /api/billing"
+    },
+    {
+      "area": "9.BILLING_API",
+      "check": "checkout requires auth",
+      "status": "PASS",
+      "detail": "status=401",
+      "evidence": "POST /api/billing/checkout"
+    },
+    {
+      "area": "9.BILLING_API",
+      "check": "cancel requires auth",
+      "status": "PASS",
+      "detail": "status=401",
+      "evidence": "POST /api/billing/cancel"
+    },
+    {
+      "area": "9.BILLING_API",
+      "check": "cancel is bound to session user (no cross-user target)",
+      "status": "PASS",
+      "detail": "cancelStatus=400 freeStill=free",
+      "evidence": "POST /api/billing/cancel + GET /api/auth/me"
+    },
+    {
+      "area": "9.BILLING_API",
+      "check": "checkout customData.userId matches session user",
+      "status": "PASS",
+      "detail": "match=true",
+      "evidence": "POST /api/billing/checkout"
+    },
+    {
+      "area": "8.WEBHOOK",
+      "check": "rejects missing signature",
+      "status": "PASS",
+      "detail": "status=400",
+      "evidence": "POST /api/webhooks/paddle"
+    },
+    {
+      "area": "8.WEBHOOK",
+      "check": "rejects invalid signature",
+      "status": "PASS",
+      "detail": "status=401",
+      "evidence": "POST /api/webhooks/paddle"
+    },
+    {
+      "area": "8.WEBHOOK",
+      "check": "idempotency via ProcessedWebhook unique eventId",
+      "status": "PASS",
+      "detail": "code review: duplicate event_id returns {ok:true,duplicate:true} before re-applying; unique index on eventId",
+      "evidence": "src/app/api/webhooks/paddle/route.ts + models/ProcessedWebhook.ts"
+    },
+    {
+      "area": "8.WEBHOOK",
+      "check": "signature verification enabled",
+      "status": "PASS",
+      "detail": "code review: HMAC SHA256 ts:body with timingSafeEqual; 300s window; secret required",
+      "evidence": "src/app/api/webhooks/paddle/route.ts"
+    },
+    {
+      "area": "9.BILLING_API",
+      "check": "paid access from webhook/DB planId not client flag",
+      "status": "PASS",
+      "detail": "code review: assertCanGenerate uses user.planId from Mongo; checkout only returns priceId; upgrade requires webhook sync",
+      "evidence": "src/lib/usage.ts + webhooks/paddle"
+    },
+    {
+      "area": "10.BILLING_UI",
+      "check": "pricing page shows Student/Pro monthly amounts",
+      "status": "PASS",
+      "detail": "checked /pricing HTML for 14.99 and 18.99",
+      "evidence": "/pricing"
+    },
+    {
+      "area": "1.FREE",
+      "check": "dashboard shows Free plan",
+      "status": "PASS",
+      "detail": "body contains Free",
+      "evidence": "/dashboard"
+    },
+    {
+      "area": "10.BILLING_UI",
+      "check": "billing page shows FREE for free user",
+      "status": "PASS",
+      "detail": "checked visible plan label",
+      "evidence": "/billing"
+    },
+    {
+      "area": "2.STUDENT_MONTHLY",
+      "check": "Paddle Sandbox overlay opens",
+      "status": "PASS",
+      "detail": "overlay detected; checkout priceId=pri_01m3…eg48 (len=30)",
+      "evidence": "/billing?plan=student&cycle=monthly"
+    },
+    {
+      "area": "2.STUDENT_MONTHLY",
+      "check": "checkout uses expected plan/cycle from API",
+      "status": "PASS",
+      "detail": "server checkout returned planId=student cycle=monthly priceId=pri_01m3…eg48 (len=30)",
+      "evidence": "POST /api/billing/checkout + overlay open"
+    },
+    {
+      "area": "6.CANCELLED_CHECKOUT",
+      "check": "abandon student/monthly keeps Free",
+      "status": "PASS",
+      "detail": "planId=free",
+      "evidence": "GET /api/auth/me after abandon"
+    },
+    {
+      "area": "3.STUDENT_ANNUAL",
+      "check": "Paddle Sandbox overlay opens",
+      "status": "PASS",
+      "detail": "overlay detected; checkout priceId=pri_01m3…3bq0 (len=29)",
+      "evidence": "/billing?plan=student&cycle=annual"
+    },
+    {
+      "area": "3.STUDENT_ANNUAL",
+      "check": "checkout uses expected plan/cycle from API",
+      "status": "PASS",
+      "detail": "server checkout returned planId=student cycle=annual priceId=pri_01m3…3bq0 (len=29)",
+      "evidence": "POST /api/billing/checkout + overlay open"
+    },
+    {
+      "area": "6.CANCELLED_CHECKOUT",
+      "check": "abandon student/annual keeps Free",
+      "status": "PASS",
+      "detail": "planId=free",
+      "evidence": "GET /api/auth/me after abandon"
+    },
+    {
+      "area": "4.PRO_MONTHLY",
+      "check": "Paddle Sandbox overlay opens",
+      "status": "PASS",
+      "detail": "overlay detected; checkout priceId=pri_01m3…ha79 (len=30)",
+      "evidence": "/billing?plan=pro&cycle=monthly"
+    },
+    {
+      "area": "4.PRO_MONTHLY",
+      "check": "checkout uses expected plan/cycle from API",
+      "status": "PASS",
+      "detail": "server checkout returned planId=pro cycle=monthly priceId=pri_01m3…ha79 (len=30)",
+      "evidence": "POST /api/billing/checkout + overlay open"
+    },
+    {
+      "area": "6.CANCELLED_CHECKOUT",
+      "check": "abandon pro/monthly keeps Free",
+      "status": "PASS",
+      "detail": "planId=free",
+      "evidence": "GET /api/auth/me after abandon"
+    },
+    {
+      "area": "5.PRO_ANNUAL",
+      "check": "Paddle Sandbox overlay opens",
+      "status": "PASS",
+      "detail": "overlay detected; checkout priceId=pri_01m3…bz4b (len=30)",
+      "evidence": "/billing?plan=pro&cycle=annual"
+    },
+    {
+      "area": "5.PRO_ANNUAL",
+      "check": "checkout uses expected plan/cycle from API",
+      "status": "PASS",
+      "detail": "server checkout returned planId=pro cycle=annual priceId=pri_01m3…bz4b (len=30)",
+      "evidence": "POST /api/billing/checkout + overlay open"
+    },
+    {
+      "area": "6.CANCELLED_CHECKOUT",
+      "check": "abandon pro/annual keeps Free",
+      "status": "PASS",
+      "detail": "planId=free",
+      "evidence": "GET /api/auth/me after abandon"
+    },
+    {
+      "area": "2.STUDENT_MONTHLY",
+      "check": "complete Sandbox payment + webhook → Student",
+      "status": "BLOCKED",
+      "detail": "Overlay can open, but completing Paddle Sandbox card payment inside cross-origin iframe is not reliably automatable here without storing payment details / brittle iframe selectors. Manual: use Paddle sandbox test card in the overlay, then confirm planId=student via /api/auth/me and /billing.",
+      "evidence": "/billing Student Monthly overlay"
+    },
+    {
+      "area": "3.STUDENT_ANNUAL",
+      "check": "complete Sandbox payment + webhook → Student annual",
+      "status": "BLOCKED",
+      "detail": "Same as Student Monthly — requires manual Sandbox card completion in Paddle overlay.",
+      "evidence": "/billing Student Annual overlay"
+    },
+    {
+      "area": "4.PRO_MONTHLY",
+      "check": "complete Sandbox payment + webhook → Pro",
+      "status": "BLOCKED",
+      "detail": "Requires manual Sandbox card completion in Paddle overlay; then verify planId=pro.",
+      "evidence": "/billing Pro Monthly overlay"
+    },
+    {
+      "area": "5.PRO_ANNUAL",
+      "check": "complete Sandbox payment + webhook → Pro annual",
+      "status": "BLOCKED",
+      "detail": "Requires manual Sandbox card completion in Paddle overlay; then verify planId=pro billingCycle=annual.",
+      "evidence": "/billing Pro Annual overlay"
+    },
+    {
+      "area": "2.STUDENT_MONTHLY",
+      "check": "post-payment features/limits available",
+      "status": "BLOCKED",
+      "detail": "Depends on successful Sandbox payment + webhook; not executed in this run.",
+      "evidence": "/api/auth/me + /api/jobs"
+    },
+    {
+      "area": "2.STUDENT_MONTHLY",
+      "check": "dashboard/billing reflects paid plan",
+      "status": "BLOCKED",
+      "detail": "Depends on webhook updating user.planId after payment.",
+      "evidence": "/billing"
+    },
+    {
+      "area": "3.STUDENT_ANNUAL",
+      "check": "post-payment features/limits available",
+      "status": "BLOCKED",
+      "detail": "Depends on successful Sandbox payment + webhook; not executed in this run.",
+      "evidence": "/api/auth/me + /api/jobs"
+    },
+    {
+      "area": "3.STUDENT_ANNUAL",
+      "check": "dashboard/billing reflects paid plan",
+      "status": "BLOCKED",
+      "detail": "Depends on webhook updating user.planId after payment.",
+      "evidence": "/billing"
+    },
+    {
+      "area": "4.PRO_MONTHLY",
+      "check": "post-payment features/limits available",
+      "status": "BLOCKED",
+      "detail": "Depends on successful Sandbox payment + webhook; not executed in this run.",
+      "evidence": "/api/auth/me + /api/jobs"
+    },
+    {
+      "area": "4.PRO_MONTHLY",
+      "check": "dashboard/billing reflects paid plan",
+      "status": "BLOCKED",
+      "detail": "Depends on webhook updating user.planId after payment.",
+      "evidence": "/billing"
+    },
+    {
+      "area": "5.PRO_ANNUAL",
+      "check": "post-payment features/limits available",
+      "status": "BLOCKED",
+      "detail": "Depends on successful Sandbox payment + webhook; not executed in this run.",
+      "evidence": "/api/auth/me + /api/jobs"
+    },
+    {
+      "area": "5.PRO_ANNUAL",
+      "check": "dashboard/billing reflects paid plan",
+      "status": "BLOCKED",
+      "detail": "Depends on webhook updating user.planId after payment.",
+      "evidence": "/billing"
+    },
+    {
+      "area": "6.CANCELLED_CHECKOUT",
+      "check": "failed Sandbox payment does not grant paid access",
+      "status": "BLOCKED",
+      "detail": "No automated failed-payment injection without forging webhooks (signature required). Manual: decline/fail card in Sandbox overlay and confirm planId remains free.",
+      "evidence": "Paddle Sandbox overlay"
+    },
+    {
+      "area": "7.CANCELLATION",
+      "check": "cancel without subscription rejected",
+      "status": "PASS",
+      "detail": "status=400",
+      "evidence": "POST /api/billing/cancel"
+    },
+    {
+      "area": "7.CANCELLATION",
+      "check": "cancel subscribed account schedules period-end",
+      "status": "BLOCKED",
+      "detail": "No Sandbox-subscribed account in this run. Code review: cancel uses effective_at=next_billing_period and sets cancelAtPeriodEnd on Subscription; User.cancelAtPeriodEnd is updated by webhook subscription.updated (not by cancel route directly). Manual after subscribe: Cancel on /billing, confirm UI 'Cancels at period end' after webhook, access remains until period end.",
+      "evidence": "POST /api/billing/cancel + webhook sync"
+    },
+    {
+      "area": "10.BILLING_UI",
+      "check": "Student/Pro/cancel states after subscription",
+      "status": "BLOCKED",
+      "detail": "Requires successful Sandbox subscription first.",
+      "evidence": "/billing"
+    }
+  ],
+  "counts": {
+    "PASS": 42,
+    "FAIL": 0,
+    "BLOCKED": 15
+  }
+}

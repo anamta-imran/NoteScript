@@ -2,11 +2,13 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { api } from "@/lib/api";
+import { ApiError, api } from "@/lib/api";
 import { Button } from "@/components/ui/Button";
 import { Field, Input, Select, Textarea } from "@/components/ui/Field";
+import { UpgradePrompt } from "@/components/billing/UpgradePrompt";
 import { wordCount, cn } from "@/lib/utils";
 import { getPlan } from "@/lib/plans";
+import { canUseSource, requiredPlanForSource } from "@/lib/entitlements";
 import { SELECTABLE_STYLES, getHandwritingTheme } from "@/lib/engine/handwritingThemes";
 import type {
   DiagramStyle,
@@ -77,7 +79,7 @@ export function CreateNoteForm({ sourceType }: { sourceType: SourceType }) {
   }, [sourceType]);
 
   const plan = user ? getPlan(user.planId as PlanId) : getPlan("free");
-  const allowed = plan.allowedSources.includes(sourceType);
+  const allowed = canUseSource(plan.id, sourceType);
 
   const optionFields = useMemo(() => {
     const showHighlight = sourceType !== "diagram";
@@ -116,7 +118,7 @@ export function CreateNoteForm({ sourceType }: { sourceType: SourceType }) {
       setError(
         e instanceof Error
           ? e.message
-          : "This video doesn't have an accessible transcript. Try another video or paste the transcript manually.",
+          : "Could not load captions for this video. Try another URL or paste a transcript manually.",
       );
     } finally {
       setBusy(false);
@@ -169,15 +171,36 @@ export function CreateNoteForm({ sourceType }: { sourceType: SourceType }) {
         }
       }, 800);
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Could not start generation.";
-      if (msg.toLowerCase().includes("upgrade") || msg.includes("generations") || msg.includes("plan")) {
-        setUpgradeMsg(msg);
+      if (e instanceof ApiError && e.code === "FEATURE_NOT_AVAILABLE") {
+        setUpgradeMsg(e.message);
         setUpgradeOpen(true);
       } else {
-        setError(msg);
+        const msg = e instanceof Error ? e.message : "Could not start generation.";
+        if (
+          msg.toLowerCase().includes("upgrade") ||
+          msg.includes("generations") ||
+          msg.includes("plan")
+        ) {
+          setUpgradeMsg(msg);
+          setUpgradeOpen(true);
+        } else {
+          setError(msg);
+        }
       }
       setBusy(false);
     }
+  }
+
+  if (user && !allowed) {
+    return (
+      <div className="mx-auto max-w-3xl">
+        <UpgradePrompt
+          feature={sourceType}
+          currentPlan={user.planId}
+          requiredPlan={requiredPlanForSource(sourceType)}
+        />
+      </div>
+    );
   }
 
   return (
@@ -185,14 +208,6 @@ export function CreateNoteForm({ sourceType }: { sourceType: SourceType }) {
       <h1 className="text-2xl font-semibold capitalize">
         {sourceType === "diagram" ? "Add diagram" : `Create from ${sourceType}`}
       </h1>
-      {!allowed ? (
-        <p className="rounded-xl bg-lavender-soft p-4 text-sm">
-          {sourceType} is not included in the {plan.name} plan.{" "}
-          <a className="underline" href="/billing">
-            Upgrade
-          </a>
-        </p>
-      ) : null}
 
       <Field label="Title (optional)" htmlFor="title">
         <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} />
@@ -537,7 +552,7 @@ export function CreateNoteForm({ sourceType }: { sourceType: SourceType }) {
       <Modal open={upgradeOpen} title="Plan limit reached" onClose={() => setUpgradeOpen(false)}>
         <p className="text-sm text-muted">{upgradeMsg}</p>
         <div className="mt-4 flex gap-2">
-          <Button href="/billing">See plans</Button>
+          <Button href="/pricing?highlight=pro">See Pro plans</Button>
           <Button variant="secondary" onClick={() => setUpgradeOpen(false)}>
             Stay on this plan
           </Button>

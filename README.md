@@ -8,7 +8,7 @@ Student SaaS that turns study material into handwritten-style notes using **rule
 - MongoDB + Mongoose
 - JWT httpOnly sessions (jose + bcryptjs)
 - Paddle billing + webhooks
-- Tesseract OCR, unpdf, youtube-transcript
+- Tesseract OCR, unpdf, YouTube captionTracks/timedtext
 
 ## Quick start
 

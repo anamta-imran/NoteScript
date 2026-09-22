@@ -1,76 +1,93 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
-import { getPlan } from "@/lib/plans";
-import type { PlanId } from "@/lib/types";
+import { canUseSource, pricingHighlightHref, requiredPlanForSource } from "@/lib/entitlements";
+import { getPlanTheme } from "@/lib/plan-theme";
+import { LockedFeatureCard } from "@/components/billing/UpgradePrompt";
+import { PlanBadge } from "@/components/billing/PlanBadge";
+import type { PlanId, SourceType } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 export default async function CreateIndexPage() {
   const user = await requireUser();
-  const plan = getPlan(user.planId as PlanId);
+  const planId = user.planId as PlanId;
+  const theme = getPlanTheme(planId);
 
-  const items = [
+  const items: {
+    href: string;
+    title: string;
+    body: string;
+    source: SourceType;
+  }[] = [
     {
       href: "/create/text",
       title: "Text",
       body: "Paste a chapter, lecture notes, or outline.",
-      unlocked: plan.allowedSources.includes("text"),
-      lock: "",
+      source: "text",
     },
     {
       href: "/create/pdf",
       title: "PDF",
       body: "Extract selectable text from a document.",
-      unlocked: plan.allowedSources.includes("pdf"),
-      lock: "Student or Pro",
+      source: "pdf",
     },
     {
       href: "/create/image",
       title: "Image",
       body: "OCR a photo, edit the text, then format.",
-      unlocked: plan.allowedSources.includes("image"),
-      lock: "Student or Pro",
+      source: "image",
     },
     {
       href: "/create/youtube",
       title: "YouTube",
-      body: "Use captions, or paste a transcript.",
-      unlocked: plan.allowedSources.includes("youtube"),
-      lock: "Pro only",
+      body: "Transform lecture captions into structured study notes.",
+      source: "youtube",
     },
     {
       href: "/create/diagram",
       title: "Diagram",
       body: "Text or reference image → handwritten study sketch.",
-      unlocked: plan.allowedSources.includes("diagram"),
-      lock: "Student or Pro",
+      source: "diagram",
     },
   ];
 
   return (
     <div className="mx-auto max-w-4xl">
-      <h1 className="text-2xl font-semibold">Create notes</h1>
-      <p className="mt-2 text-sm text-muted">Pick a source. Locked options show the required plan.</p>
+      <div className="flex flex-wrap items-center gap-2">
+        <h1 className="text-2xl font-semibold tracking-tight">Create notes</h1>
+        <PlanBadge planId={planId} />
+      </div>
+      <p className="mt-2 text-sm text-muted">
+        Pick a source. Locked options stay visible so you can discover premium features.
+      </p>
       <div className="mt-8 grid gap-4 sm:grid-cols-2">
-        {items.map((i) =>
-          i.unlocked ? (
-            <Link key={i.href} href={i.href} className="rounded-2xl border border-line bg-white p-6">
-              <h2 className="font-semibold">{i.title}</h2>
-              <p className="mt-2 text-sm text-muted">{i.body}</p>
-            </Link>
-          ) : (
-            <div
-              key={i.href}
-              className="rounded-2xl border border-dashed border-line bg-white/70 p-6 opacity-90"
-            >
-              <h2 className="font-semibold">
-                {i.title} <span className="text-xs text-muted">🔒 {i.lock}</span>
-              </h2>
-              <p className="mt-2 text-sm text-muted">{i.body}</p>
-              <Link href="/billing" className="mt-3 inline-block text-sm text-lavender-deep underline">
-                Upgrade
+        {items.map((i) => {
+          const unlocked = canUseSource(planId, i.source);
+          const required = requiredPlanForSource(i.source);
+          if (unlocked) {
+            return (
+              <Link
+                key={i.href}
+                href={i.href}
+                className={cn(
+                  "rounded-2xl border p-6 transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_14px_36px_rgba(103,76,145,0.1)]",
+                  theme.cardClass,
+                )}
+              >
+                <h2 className="font-semibold">{i.title}</h2>
+                <p className="mt-2 text-sm text-muted">{i.body}</p>
               </Link>
-            </div>
-          ),
-        )}
+            );
+          }
+          return (
+            <LockedFeatureCard
+              key={i.href}
+              href={i.source === "youtube" ? "/create/youtube" : pricingHighlightHref(required)}
+              title={i.title}
+              body={i.body}
+              requiredPlan={required}
+            />
+          );
+        })}
       </div>
     </div>
   );

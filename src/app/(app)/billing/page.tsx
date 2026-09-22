@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { initializePaddle, type Paddle } from "@paddle/paddle-js";
 import { api } from "@/lib/api";
@@ -9,8 +9,12 @@ import { Button } from "@/components/ui/Button";
 import { UsageMeter } from "@/components/ui/UsageMeter";
 import { Skeleton } from "@/components/ui/EmptyState";
 import { useToast } from "@/components/ui/Toast";
-import { formatDate, formatUsd } from "@/lib/utils";
+import { PlanBadge } from "@/components/billing/PlanBadge";
+import { PlanActivationScreen } from "@/components/billing/PlanActivationScreen";
+import { formatDate, formatUsd, cn } from "@/lib/utils";
 import { PLANS } from "@/lib/plans";
+import { clearPlanActivation, startPlanActivation } from "@/lib/plan-activation";
+import { getPlanTheme } from "@/lib/plan-theme";
 import { waitForPaidPlan } from "@/lib/wait-for-paid-plan";
 import type { BillingCycle, PlanId, PublicUser, UsageSnapshot } from "@/lib/types";
 
@@ -33,7 +37,7 @@ type BillingData = {
 async function openCheckout(
   planId: PlanId,
   billingCycle: BillingCycle,
-  onPaymentCompleted: () => void,
+  onPaymentCompleted: (paidPlan: Extract<PlanId, "student" | "pro">) => void,
 ) {
   const checkoutData = await api<{
     priceId: string;
@@ -50,7 +54,7 @@ async function openCheckout(
     token,
     eventCallback: (event) => {
       if (event.name === "checkout.completed") {
-        onPaymentCompleted();
+        onPaymentCompleted(planId as Extract<PlanId, "student" | "pro">);
       }
     },
   });
@@ -70,26 +74,45 @@ function BillingPageInner() {
   const [error, setError] = useState("");
   const [cycle, setCycle] = useState<BillingCycle>("monthly");
   const [busy, setBusy] = useState(false);
-  const [confirmingPayment, setConfirmingPayment] = useState(false);
+  const [activatingPlan, setActivatingPlan] = useState<Extract<PlanId, "student" | "pro"> | null>(
+    null,
+  );
+  const [takingLonger, setTakingLonger] = useState(false);
   const confirmingPaymentRef = useRef(false);
   const autoCheckoutStarted = useRef(false);
+  const abortRef = useRef<AbortController | null>(null);
 
-  function beginConfirmingPayment() {
-    if (confirmingPaymentRef.current) return;
-    confirmingPaymentRef.current = true;
-    setConfirmingPayment(true);
-    setBusy(true);
-    void waitForPaidPlan()
-      .then(() => {
-        window.location.href = "/dashboard";
+  const beginConfirmingPayment = useCallback(
+    (paidPlan: Extract<PlanId, "student" | "pro">) => {
+      if (confirmingPaymentRef.current) return;
+      confirmingPaymentRef.current = true;
+      const fromPlan = data?.user.planId ?? "free";
+      startPlanActivation(paidPlan, fromPlan);
+      setActivatingPlan(paidPlan);
+      setTakingLonger(false);
+      setBusy(true);
+      abortRef.current?.abort();
+      const ac = new AbortController();
+      abortRef.current = ac;
+      void waitForPaidPlan({
+        expectedPlan: paidPlan,
+        signal: ac.signal,
+        softTimeoutMs: 6000,
+        onSoftTimeout: () => setTakingLonger(true),
       })
-      .catch(() => {
-        confirmingPaymentRef.current = false;
-        setConfirmingPayment(false);
-        setBusy(false);
-        push("Payment confirmation was interrupted. Refresh billing in a moment.", "err");
-      });
-  }
+        .then(() => {
+          clearPlanActivation();
+          window.location.replace("/dashboard");
+        })
+        .catch(() => {
+          confirmingPaymentRef.current = false;
+          setTakingLonger(true);
+          setBusy(false);
+          push("Still activating — tap Refresh status in a moment.", "err");
+        });
+    },
+    [push, data?.user.planId],
+  );
 
   useEffect(() => {
     const qCycle = searchParams.get("cycle");
@@ -105,7 +128,7 @@ function BillingPageInner() {
   }, []);
 
   useEffect(() => {
-    if (!data || autoCheckoutStarted.current || busy || confirmingPayment) return;
+    if (!data || autoCheckoutStarted.current || busy || activatingPlan) return;
     const qPlan = searchParams.get("plan");
     const qCycle = searchParams.get("cycle");
     if (qPlan !== "student" && qPlan !== "pro") return;
@@ -121,7 +144,7 @@ function BillingPageInner() {
       .finally(() => {
         if (!confirmingPaymentRef.current) setBusy(false);
       });
-  }, [data, searchParams, busy, confirmingPayment, push]);
+  }, [data, searchParams, busy, activatingPlan, push, beginConfirmingPayment]);
 
   async function portal() {
     setBusy(true);
@@ -162,6 +185,36 @@ function BillingPageInner() {
     }
   }
 
+  async function refreshActivationStatus() {
+    try {
+      const me = await api<{ user: { planId: PlanId } }>("/api/auth/me");
+      if (
+        activatingPlan &&
+        (me.user.planId === activatingPlan ||
+          (activatingPlan === "student" && me.user.planId === "pro"))
+      ) {
+        clearPlanActivation();
+        window.location.replace("/dashboard");
+      } else {
+        push("Still activating — usually a few more seconds.", "ok");
+      }
+    } catch {
+      push("Could not refresh yet. Try again shortly.", "err");
+    }
+  }
+
+  // Full-screen activation for Student and Pro (Free→paid and Student→Pro).
+  // Must render before any billing/dashboard content so the old plan never flashes.
+  if (activatingPlan) {
+    return (
+      <PlanActivationScreen
+        expectedPlan={activatingPlan}
+        takingLonger={takingLonger}
+        onRefresh={refreshActivationStatus}
+      />
+    );
+  }
+
   if (error) {
     return (
       <div className="mx-auto max-w-5xl">
@@ -174,6 +227,7 @@ function BillingPageInner() {
   if (!data) return <Skeleton className="h-64" />;
 
   const planId = data.user.planId;
+  const theme = getPlanTheme(planId);
   const textLabel =
     data.usage.textLimit === null
       ? "Unlimited text"
@@ -181,25 +235,17 @@ function BillingPageInner() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Billing</h1>
-        <p className="mt-1 text-sm text-muted">Current plan, usage, and payment history.</p>
+      <div className="flex flex-wrap items-center gap-2">
+        <h1 className="text-2xl font-semibold tracking-tight">Billing</h1>
+        <PlanBadge planId={planId} />
       </div>
+      <p className="text-sm text-muted">Current plan, usage, and payment history.</p>
 
-      {confirmingPayment ? (
-        <div className="rounded-2xl border border-line bg-white p-4 text-sm">
-          <p className="font-medium text-ink">Confirming payment…</p>
-          <p className="mt-1 text-muted">
-            Payment succeeded. Unlocking your plan — this usually takes a few seconds. You will be
-            taken to the dashboard when it is ready.
-          </p>
-        </div>
-      ) : null}
-      <section className="rounded-2xl border border-line bg-white p-6">
+      <section className={cn("rounded-2xl border p-6", theme.cardClass)}>
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-sm text-muted">Current plan</p>
-            <h2 className="text-2xl font-semibold uppercase tracking-wide">{planId}</h2>
+            <h2 className="mt-1 text-2xl font-semibold tracking-tight">{PLANS[planId].name}</h2>
             {data.user.billingCycle ? (
               <p className="mt-1 text-sm text-muted">
                 {data.user.billingCycle} · {data.user.subscriptionStatus || "free"}
@@ -256,8 +302,8 @@ function BillingPageInner() {
       </section>
 
       {planId !== "pro" ? (
-        <section className="rounded-2xl border border-line bg-lavender-soft/50 p-6">
-          <h2 className="text-xl font-semibold">Upgrade</h2>
+        <section className="rounded-2xl border border-[#e2d8ec] bg-gradient-to-br from-[#faf7fd] to-white p-6">
+          <h2 className="text-xl font-semibold tracking-tight">Upgrade</h2>
           <p className="mt-2 text-sm text-muted">
             Checkout opens Paddle. Your plan updates only after a verified webhook.
           </p>
@@ -279,13 +325,31 @@ function BillingPageInner() {
             {(["student", "pro"] as const)
               .filter((p) => (planId === "free" ? true : p === "pro"))
               .map((p) => (
-                <div key={p} className="rounded-xl bg-white p-4">
-                  <p className="font-semibold capitalize">{p}</p>
-                  <p className="text-sm text-muted">
+                <div
+                  key={p}
+                  className={cn(
+                    "rounded-xl border p-4",
+                    p === "pro"
+                      ? "border-[#302838]/20 bg-[#302838] text-white"
+                      : "border-[#e2d8ec] bg-white",
+                  )}
+                >
+                  <div className="flex items-center gap-2">
+                    <p className="font-semibold capitalize">{p}</p>
+                    <PlanBadge planId={p} className={p === "pro" ? "!bg-white/15 !text-white" : ""} />
+                  </div>
+                  <p className={cn("mt-1 text-sm", p === "pro" ? "text-white/70" : "text-muted")}>
                     {formatUsd(cycle === "monthly" ? PLANS[p].monthlyPriceUsd : PLANS[p].annualPriceUsd)}
                     /{cycle === "monthly" ? "mo" : "yr"}
                   </p>
-                  <Button className="mt-3" disabled={busy} onClick={() => upgrade(p)}>
+                  {p === "pro" ? (
+                    <p className="mt-2 text-xs text-white/65">Includes YouTube → Notes</p>
+                  ) : null}
+                  <Button
+                    className={cn("mt-3", p === "pro" && "bg-white text-[#302838] hover:bg-[#E9E1F0]")}
+                    disabled={busy}
+                    onClick={() => upgrade(p)}
+                  >
                     {planId === "student" && p === "pro" ? "Upgrade to Pro" : `Get ${p}`}
                   </Button>
                 </div>
@@ -300,11 +364,13 @@ function BillingPageInner() {
       ) : (
         <section className="rounded-2xl border border-[#302838]/20 bg-[#302838] p-6 text-white">
           <h2 className="text-xl font-semibold">All features unlocked</h2>
-          <p className="mt-2 text-sm text-white/70">You are on Pro — text, YouTube, images, PDFs, and diagrams.</p>
+          <p className="mt-2 text-sm text-white/70">
+            You are on Pro — text, YouTube, images, PDFs, and diagrams.
+          </p>
         </section>
       )}
 
-      <section className="rounded-2xl border border-line bg-white p-6">
+      <section className={cn("rounded-2xl border p-6", theme.cardClass)}>
         <h2 className="text-xl font-semibold">Payment history</h2>
         {data.invoices.length === 0 ? (
           <p className="mt-3 text-sm text-muted">No payments yet.</p>
@@ -322,7 +388,12 @@ function BillingPageInner() {
                 <div className="text-sm">
                   {inv.currency?.toUpperCase()} {inv.amountPaid}
                   {inv.hostedInvoiceUrl ? (
-                    <a className="ms-3 underline" href={inv.hostedInvoiceUrl} target="_blank" rel="noreferrer">
+                    <a
+                      className="ms-3 underline"
+                      href={inv.hostedInvoiceUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
                       Receipt
                     </a>
                   ) : null}

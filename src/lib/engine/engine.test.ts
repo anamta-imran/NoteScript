@@ -3,7 +3,7 @@ import { detectHeadings } from "@/lib/engine/headingDetector";
 import { detectFormulas } from "@/lib/engine/formulaDetector";
 import { detectDefinitions } from "@/lib/engine/definitionDetector";
 import { detectSubject } from "@/lib/engine/subjectDetector";
-import { processExtractedContent, paginateNote } from "@/lib/engine";
+import { processExtractedContent, paginateNote, cleanSourceContent } from "@/lib/engine";
 import { getPlan } from "@/lib/plans";
 import { pickDiagramFromPrompt } from "@/lib/engine/diagramService";
 
@@ -40,8 +40,57 @@ describe("subject detection", () => {
   });
 });
 
+describe("unified study notes engine", () => {
+  it("turns transcript-like prose into structured study notes", () => {
+    const transcript = Array.from({ length: 18 }, (_, i) => {
+      const min = String(Math.floor(i / 2)).padStart(2, "0");
+      const sec = String((i * 7) % 60).padStart(2, "0");
+      return `[${min}:${sec}] Photosynthesis is defined as the process plants use to make food from light. The chloroplast is important. First light reactions happen. Then the Calvin cycle fixes carbon. For example green leaves absorb sunlight. Remember oxygen is released as a byproduct.`;
+    }).join("\n");
+
+    const note = processExtractedContent(
+      {
+        text: transcript,
+        titleHint: "Photosynthesis lecture",
+        transcript: [{ text: "Photosynthesis overview", offset: 0, duration: 1000 }],
+        warnings: [],
+      },
+      {
+        handwritingStyle: "clean-study",
+        noteLength: "standard",
+        language: "english",
+        subject: "auto",
+        smartHighlighting: true,
+        importantPoints: true,
+        formulas: false,
+        examples: true,
+        diagrams: false,
+        chapterDetection: false,
+      },
+    );
+
+    expect(note.title.toLowerCase()).toContain("photosynthesis");
+    expect(note.blocks.some((b) => b.type === "heading")).toBe(true);
+    expect(note.blocks.some((b) => b.type === "definition" || b.type === "bullets")).toBe(true);
+    expect(note.blocks.some((b) => b.type === "heading" && b.text === "Key Takeaways")).toBe(true);
+    // Must not keep raw [mm:ss] cues as the note body
+    const blob = JSON.stringify(note.blocks);
+    expect(blob.includes("[00:")).toBe(false);
+  });
+
+  it("cleans filler and timestamp noise from source text", () => {
+    const cleaned = cleanSourceContent(
+      "[0:01] Um, okay so photosynthesis is, you know, important. [0:08] Yeah.",
+      { isTranscript: true },
+    );
+    expect(cleaned.toLowerCase()).toContain("photosynthesis");
+    expect(cleaned.toLowerCase()).not.toContain("um");
+    expect(cleaned).not.toMatch(/\[\d+:\d+/);
+  });
+});
+
 describe("note structuring + pagination", () => {
-  it("builds pages from text", () => {
+  it("builds pages from outlined text", () => {
     const note = processExtractedContent(
       {
         text: "# Force\n\nF = ma\n\nForce is defined as mass times acceleration.\n\n- Important: newton laws\n- Example: pushing a box",

@@ -13,6 +13,9 @@
   --success-soft: #e4f3ea;
   --danger: #b42318;
   --shadow: 0 10px 30px rgba(60, 50, 80, 0.06);
+  --pro-ink: #302838;
+  --pro-mist: #e9e1f0;
+  --student-glow: rgba(103, 76, 145, 0.12);
 }
 
 @theme inline {

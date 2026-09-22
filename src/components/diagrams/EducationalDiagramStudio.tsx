@@ -17,6 +17,7 @@ import type {
   PublicUser,
 } from "@/lib/types";
 import { getPlan } from "@/lib/plans";
+import { canUseSource } from "@/lib/entitlements";
 import { FlowchartDiagram } from "./FlowchartDiagram";
 import { ScientificDiagram } from "./ScientificDiagram";
 import { cn } from "@/lib/utils";
@@ -70,7 +71,7 @@ export function EducationalDiagramStudio() {
   }, []);
 
   const plan = user ? getPlan(user.planId as PlanId) : getPlan("free");
-  const allowed = plan.allowedSources.includes("diagram");
+  const allowed = canUseSource(plan.id, "diagram");
 
   function generate() {
     setError("");
@@ -151,7 +152,7 @@ export function EducationalDiagramStudio() {
           error?: string;
         }>(`/api/jobs/${jobId}`);
         setStage(job.stage || "Working…");
-        if (job.state === "done" && job.noteId) {
+        if (job.state === "completed" && job.noteId) {
           router.push(`/notes/${job.noteId}`);
           return;
         }
