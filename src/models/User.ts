@@ -80,6 +80,25 @@ const UserSchema = new Schema(
       sparse: true,
     },
 
+    /** Active billing provider for this user (paddle kept for existing subscribers). */
+    billingProvider: {
+      type: String,
+      enum: ["paddle", "polar"],
+      sparse: true,
+    },
+
+    polarCustomerId: {
+      type: String,
+      index: true,
+      sparse: true,
+    },
+
+    polarSubscriptionId: {
+      type: String,
+      index: true,
+      sparse: true,
+    },
+
     billingCycle: {
       type: String,
       enum: ["monthly", "annual"],

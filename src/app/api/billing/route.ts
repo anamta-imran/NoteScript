@@ -5,6 +5,7 @@ import { getUsage } from "@/lib/usage";
 import { handleRouteError, json } from "@/lib/http";
 import { getPlan } from "@/lib/plans";
 import { paddleConfigured } from "@/lib/paddle";
+import { polarConfigured } from "@/lib/polar";
 import type { PlanId } from "@/lib/types";
 
 export async function GET() {
@@ -25,7 +26,7 @@ export async function GET() {
       user: toPublicUser(user),
       usage,
       plan: getPlan(user.planId as PlanId),
-      paymentsConfigured: paddleConfigured(),
+      paymentsConfigured: polarConfigured() || paddleConfigured(),
       invoices: invoices.map((invoice) => ({
         id: String(invoice._id),
         amountPaid: invoice.amountPaid,

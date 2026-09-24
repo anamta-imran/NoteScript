@@ -9,16 +9,36 @@ const SubscriptionSchema = new Schema(
       index: true,
     },
 
+    billingProvider: {
+      type: String,
+      enum: ["paddle", "polar"],
+      default: "paddle",
+      index: true,
+    },
+
     paddleCustomerId: {
       type: String,
-      required: true,
       index: true,
+      sparse: true,
     },
 
     paddleSubscriptionId: {
       type: String,
-      required: true,
       unique: true,
+      sparse: true,
+      index: true,
+    },
+
+    polarCustomerId: {
+      type: String,
+      index: true,
+      sparse: true,
+    },
+
+    polarSubscriptionId: {
+      type: String,
+      unique: true,
+      sparse: true,
       index: true,
     },
 
@@ -73,6 +93,13 @@ const InvoiceSchema = new Schema(
     },
 
     paddleTransactionId: {
+      type: String,
+      unique: true,
+      sparse: true,
+      index: true,
+    },
+
+    polarOrderId: {
       type: String,
       unique: true,
       sparse: true,

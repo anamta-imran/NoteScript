@@ -1,6 +1,6 @@
 import { createHmac, timingSafeEqual } from "crypto";
 import type { BillingCycle, PlanId } from "@/lib/types";
-import { priceIdEnv } from "@/lib/plans";
+import { priceIdEnv, resolvePlanFromConfiguredPriceId } from "@/lib/plans";
 
 export type PaddleWebhookData = {
   id: string;
@@ -96,21 +96,7 @@ export function resolvePlanFromPriceId(
   priceId: string | undefined,
   lookup: (plan: PlanId, cycle: BillingCycle) => string = priceIdEnv,
 ): { planId: Exclude<PlanId, "free">; billingCycle: BillingCycle } | null {
-  if (!priceId) return null;
-
-  const combinations: Array<{ planId: Exclude<PlanId, "free">; billingCycle: BillingCycle }> = [
-    { planId: "student", billingCycle: "monthly" },
-    { planId: "student", billingCycle: "annual" },
-    { planId: "pro", billingCycle: "monthly" },
-    { planId: "pro", billingCycle: "annual" },
-  ];
-
-  for (const combo of combinations) {
-    if (lookup(combo.planId, combo.billingCycle) === priceId) {
-      return combo;
-    }
-  }
-  return null;
+  return resolvePlanFromConfiguredPriceId(priceId, lookup);
 }
 
 export function resolvePlanId(

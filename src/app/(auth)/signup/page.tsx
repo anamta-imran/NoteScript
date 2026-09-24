@@ -2,17 +2,31 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { FormEvent, useRef, useState } from "react";
-import { initializePaddle, type Paddle } from "@paddle/paddle-js";
+import { FormEvent, useState } from "react";
 
 import { BrandLogo } from "@/components/brand/BrandLogo";
 import { Button } from "@/components/ui/Button";
 import { Field, Input } from "@/components/ui/Field";
-import { PlanActivationScreen } from "@/components/billing/PlanActivationScreen";
 import { api } from "@/lib/api";
-import { clearPlanActivation, startPlanActivation } from "@/lib/plan-activation";
-import { waitForPaidPlan } from "@/lib/wait-for-paid-plan";
-import type { PlanId } from "@/lib/types";
+import type { BillingCycle, PlanId } from "@/lib/types";
+
+async function startPolarCheckout(planId: string, billingCycle: string) {
+  const checkout = await api<{
+    url: string;
+    checkoutId: string;
+    planId: PlanId;
+    billingCycle: BillingCycle;
+  }>("/api/billing/checkout", {
+    method: "POST",
+    body: JSON.stringify({ planId, billingCycle }),
+  });
+
+  if (!checkout.url) {
+    throw new Error("Checkout URL was not returned.");
+  }
+
+  window.location.assign(checkout.url);
+}
 
 export default function SignupPage() {
   const searchParams = useSearchParams();
@@ -23,80 +37,6 @@ export default function SignupPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [pendingCheckout, setPendingCheckout] = useState(false);
-  const [activatingPlan, setActivatingPlan] = useState<Extract<PlanId, "student" | "pro"> | null>(
-    null,
-  );
-  const [takingLonger, setTakingLonger] = useState(false);
-  const confirmingPaymentRef = useRef(false);
-  const [checkoutEmail, setCheckoutEmail] = useState("");
-
-  async function openPaddleCheckout(email: string, planId: string, billingCycle: string) {
-    const checkoutData = await api<{
-      priceId: string;
-      planId: string;
-      billingCycle: string;
-      customer: { email: string };
-      customData: { userId: string; planId: string; billingCycle: string };
-    }>("/api/billing/checkout", {
-      method: "POST",
-      body: JSON.stringify({ planId, billingCycle }),
-    });
-
-    const token = process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN;
-    if (!token) throw new Error("Paddle checkout is not configured.");
-
-    const expected = (planId === "pro" ? "pro" : "student") as Extract<PlanId, "student" | "pro">;
-
-    const paddle: Paddle | undefined = await initializePaddle({
-      environment: process.env.NEXT_PUBLIC_PADDLE_ENV === "production" ? "production" : "sandbox",
-      token,
-      eventCallback: (event) => {
-        if (event.name === "checkout.closed") {
-          if (!confirmingPaymentRef.current) setPendingCheckout(true);
-          return;
-        }
-        if (event.name === "checkout.completed") {
-          confirmingPaymentRef.current = true;
-          setPendingCheckout(false);
-          setError("");
-          startPlanActivation(expected, "free");
-          setActivatingPlan(expected);
-          setTakingLonger(false);
-          void waitForPaidPlan({
-            expectedPlan: expected,
-            softTimeoutMs: 6000,
-            onSoftTimeout: () => setTakingLonger(true),
-          })
-            .then(() => {
-              clearPlanActivation();
-              window.location.replace("/dashboard");
-            })
-            .catch(() => {
-              confirmingPaymentRef.current = false;
-              setTakingLonger(true);
-              setError("Still activating — keep this page open and tap Refresh status.");
-            });
-          return;
-        }
-        if (event.name === "checkout.error" || event.name === "checkout.failed") {
-          confirmingPaymentRef.current = false;
-          setActivatingPlan(null);
-          clearPlanActivation();
-          setPendingCheckout(true);
-          setError("Checkout could not be completed. You can try again, or continue on Free.");
-        }
-      },
-    });
-
-    if (!paddle) throw new Error("Could not initialize Paddle checkout.");
-
-    paddle.Checkout.open({
-      items: [{ priceId: checkoutData.priceId, quantity: 1 }],
-      customer: { email },
-      customData: checkoutData.customData,
-      settings: { displayMode: "overlay", theme: "light" },
-    });
-  }
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -119,10 +59,11 @@ export default function SignupPage() {
         selectedPlan !== "free" &&
         (selectedCycle === "monthly" || selectedCycle === "annual")
       ) {
-        setCheckoutEmail(email);
         try {
           setPendingCheckout(false);
-          await openPaddleCheckout(email, selectedPlan, selectedCycle);
+          // Redirect to Polar. Plan unlock happens only after webhook + /billing?checkout=success.
+          await startPolarCheckout(selectedPlan, selectedCycle);
+          return;
         } catch (checkoutErr) {
           setPendingCheckout(true);
           setError(
@@ -140,29 +81,6 @@ export default function SignupPage() {
   }
 
   const isPaidSignup = selectedPlan === "student" || selectedPlan === "pro";
-
-  if (activatingPlan) {
-    return (
-      <PlanActivationScreen
-        expectedPlan={activatingPlan}
-        takingLonger={takingLonger}
-        onRefresh={async () => {
-          try {
-            const me = await api<{ user: { planId: PlanId } }>("/api/auth/me");
-            if (
-              me.user.planId === activatingPlan ||
-              (activatingPlan === "student" && me.user.planId === "pro")
-            ) {
-              clearPlanActivation();
-              window.location.replace("/dashboard");
-            }
-          } catch {
-            /* keep waiting */
-          }
-        }}
-      />
-    );
-  }
 
   return (
     <main className="relative flex min-h-[calc(100vh-80px)] items-center justify-center overflow-hidden bg-[#fcfbfe] px-4 py-12">
@@ -213,7 +131,7 @@ export default function SignupPage() {
                 {selectedPlan === "pro" ? "Pro" : "Student"} subscription is not active yet.
               </p>
               <p className="text-[#756d7d]">
-                Complete Paddle checkout to unlock paid features. Until then you remain on Free.
+                Complete checkout to unlock paid features. Until then you remain on Free.
               </p>
               <div className="flex flex-wrap gap-2">
                 <Button
@@ -221,12 +139,8 @@ export default function SignupPage() {
                   onClick={async () => {
                     setError("");
                     setPendingCheckout(false);
-                    const email =
-                      checkoutEmail ||
-                      String((document.getElementById("email") as HTMLInputElement)?.value || "");
                     try {
-                      await openPaddleCheckout(
-                        email,
+                      await startPolarCheckout(
                         selectedPlan || "student",
                         selectedCycle || "monthly",
                       );

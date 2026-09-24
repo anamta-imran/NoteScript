@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { initializePaddle, type Paddle } from "@paddle/paddle-js";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/Button";
 import { UsageMeter } from "@/components/ui/UsageMeter";
@@ -34,37 +33,26 @@ type BillingData = {
   }[];
 };
 
-async function openCheckout(
-  planId: PlanId,
-  billingCycle: BillingCycle,
-  onPaymentCompleted: (paidPlan: Extract<PlanId, "student" | "pro">) => void,
-) {
-  const checkoutData = await api<{
-    priceId: string;
-    customData: Record<string, string>;
-    customer: { email: string };
+/**
+ * Create a Polar Checkout session and redirect the browser.
+ * Plan activation is never granted here — only after webhook confirmation.
+ */
+async function startPolarCheckout(planId: PlanId, billingCycle: BillingCycle) {
+  const checkout = await api<{
+    url: string;
+    checkoutId: string;
+    planId: PlanId;
+    billingCycle: BillingCycle;
   }>("/api/billing/checkout", {
     method: "POST",
     body: JSON.stringify({ planId, billingCycle }),
   });
-  const token = process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN;
-  if (!token) throw new Error("Paddle checkout is not configured.");
-  const paddle: Paddle | undefined = await initializePaddle({
-    environment: process.env.NEXT_PUBLIC_PADDLE_ENV === "production" ? "production" : "sandbox",
-    token,
-    eventCallback: (event) => {
-      if (event.name === "checkout.completed") {
-        onPaymentCompleted(planId as Extract<PlanId, "student" | "pro">);
-      }
-    },
-  });
-  if (!paddle) throw new Error("Could not initialize Paddle.");
-  paddle.Checkout.open({
-    items: [{ priceId: checkoutData.priceId, quantity: 1 }],
-    customer: { email: checkoutData.customer.email },
-    customData: checkoutData.customData,
-    settings: { displayMode: "overlay", theme: "light" },
-  });
+
+  if (!checkout.url) {
+    throw new Error("Checkout URL was not returned.");
+  }
+
+  window.location.assign(checkout.url);
 }
 
 function BillingPageInner() {
@@ -80,6 +68,7 @@ function BillingPageInner() {
   const [takingLonger, setTakingLonger] = useState(false);
   const confirmingPaymentRef = useRef(false);
   const autoCheckoutStarted = useRef(false);
+  const successHandled = useRef(false);
   const abortRef = useRef<AbortController | null>(null);
 
   const beginConfirmingPayment = useCallback(
@@ -127,8 +116,31 @@ function BillingPageInner() {
       .catch((e) => setError(e instanceof Error ? e.message : "Could not load billing."));
   }, []);
 
+  // Return from Polar Checkout — poll webhook confirmation; never activate from the browser alone.
+  useEffect(() => {
+    if (!data || successHandled.current || activatingPlan) return;
+    if (searchParams.get("checkout") !== "success") return;
+
+    const qPlan = searchParams.get("plan");
+    if (qPlan !== "student" && qPlan !== "pro") return;
+
+    successHandled.current = true;
+    autoCheckoutStarted.current = true;
+
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("checkout");
+      url.searchParams.delete("checkout_id");
+      window.history.replaceState({}, "", url.pathname + url.search);
+    }
+
+    beginConfirmingPayment(qPlan);
+  }, [data, searchParams, activatingPlan, beginConfirmingPayment]);
+
   useEffect(() => {
     if (!data || autoCheckoutStarted.current || busy || activatingPlan) return;
+    if (searchParams.get("checkout") === "success") return;
+
     const qPlan = searchParams.get("plan");
     const qCycle = searchParams.get("cycle");
     if (qPlan !== "student" && qPlan !== "pro") return;
@@ -139,12 +151,11 @@ function BillingPageInner() {
     autoCheckoutStarted.current = true;
     setCycle(qCycle);
     setBusy(true);
-    openCheckout(qPlan, qCycle, beginConfirmingPayment)
-      .catch((e) => push(e instanceof Error ? e.message : "Checkout failed.", "err"))
-      .finally(() => {
-        if (!confirmingPaymentRef.current) setBusy(false);
-      });
-  }, [data, searchParams, busy, activatingPlan, push, beginConfirmingPayment]);
+    startPolarCheckout(qPlan, qCycle).catch((e) => {
+      push(e instanceof Error ? e.message : "Checkout failed.", "err");
+      setBusy(false);
+    });
+  }, [data, searchParams, busy, activatingPlan, push]);
 
   async function portal() {
     setBusy(true);
@@ -176,12 +187,10 @@ function BillingPageInner() {
   async function upgrade(planId: PlanId) {
     setBusy(true);
     try {
-      await openCheckout(planId, cycle, beginConfirmingPayment);
+      await startPolarCheckout(planId, cycle);
     } catch (e) {
       push(e instanceof Error ? e.message : "Checkout failed.", "err");
       setBusy(false);
-    } finally {
-      if (!confirmingPaymentRef.current) setBusy(false);
     }
   }
 
@@ -305,7 +314,7 @@ function BillingPageInner() {
         <section className="rounded-2xl border border-[#e2d8ec] bg-gradient-to-br from-[#faf7fd] to-white p-6">
           <h2 className="text-xl font-semibold tracking-tight">Upgrade</h2>
           <p className="mt-2 text-sm text-muted">
-            Checkout opens Paddle. Your plan updates only after a verified webhook.
+            Checkout continues to secure payment. Your plan updates only after a verified webhook.
           </p>
           <div className="mt-4 inline-flex rounded-xl border border-line bg-white p-1">
             <button

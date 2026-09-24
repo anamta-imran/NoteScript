@@ -220,6 +220,41 @@ export function priceIdEnv(plan: PlanId, cycle: BillingCycle): string {
   return process.env[key] ?? "";
 }
 
+/** Polar product/price IDs for the four paid SKUs (server env; placeholders until configured). */
+export function polarPriceIdEnv(plan: PlanId, cycle: BillingCycle): string {
+  const key = `POLAR_PRICE_${plan.toUpperCase()}_${cycle.toUpperCase()}`;
+  return process.env[key] ?? "";
+}
+
+/**
+ * Map a configured provider price/product ID to NoteScript plan + billing cycle.
+ * Used by Paddle and Polar webhooks with their respective env lookups.
+ */
+export function resolvePlanFromConfiguredPriceId(
+  priceId: string | undefined,
+  lookup: (plan: PlanId, cycle: BillingCycle) => string,
+): { planId: Exclude<PlanId, "free">; billingCycle: BillingCycle } | null {
+  if (!priceId) return null;
+
+  const combinations: Array<{
+    planId: Exclude<PlanId, "free">;
+    billingCycle: BillingCycle;
+  }> = [
+    { planId: "student", billingCycle: "monthly" },
+    { planId: "student", billingCycle: "annual" },
+    { planId: "pro", billingCycle: "monthly" },
+    { planId: "pro", billingCycle: "annual" },
+  ];
+
+  for (const combo of combinations) {
+    if (lookup(combo.planId, combo.billingCycle) === priceId) {
+      return combo;
+    }
+  }
+
+  return null;
+}
+
 export function styleMinPlan(style: HandwritingStyle): PlanId {
   if (FREE_STYLES.includes(style) || style === "clean") return "free";
   if (
