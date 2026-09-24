@@ -51,6 +51,9 @@ export const metadata: Metadata = {
       "Study material in. Beautiful handwritten notes out. Text, YouTube transcripts, PDFs, and images.",
     type: "website",
   },
+  verification: {
+    google: "Daimksw0fDa7mjOdKJkYy-L7w6tdpD4iGU269zFjjco",
+  },
   // Favicon + Apple icon: src/app/icon.png and src/app/apple-icon.png (NoteScript brand).
   // Old default favicon.ico removed — do not reference /favicon.ico.
 };
