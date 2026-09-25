@@ -76,3 +76,14 @@ export function buildFaqPageJsonLd(faqs: FaqItem[]) {
     })),
   };
 }
+
+/**
+ * Serialize schema objects for `<script type="application/ld+json">`.
+ * Escapes `<` so the payload cannot break out of the script element.
+ * Pages render the script tag themselves — there is no separate JsonLd component.
+ */
+export function serializeJsonLd(
+  data: Record<string, unknown> | Record<string, unknown>[],
+): string {
+  return JSON.stringify(data).replace(/</g, "\\u003c");
+}

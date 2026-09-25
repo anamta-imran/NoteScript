@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { JsonLd } from "@/components/seo/JsonLd";
-import { buildFaqPageJsonLd, type FaqItem } from "@/lib/seo/structured-data";
+import {
+  buildFaqPageJsonLd,
+  serializeJsonLd,
+  type FaqItem,
+} from "@/lib/seo/structured-data";
 
 export const metadata: Metadata = {
   title: {
@@ -255,7 +258,11 @@ export default function FaqPage() {
 
   return (
     <main className="bg-[#fcfbfe]">
-      <JsonLd data={faqLd} />
+      <script
+        type="application/ld+json"
+        // Static FAQ schema only — answers are developer-authored, not user input.
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(faqLd) }}
+      />
       {/* Hero */}
       <section className="relative overflow-hidden">
         <div className="absolute left-1/2 top-[-170px] h-[400px] w-[700px] -translate-x-1/2 rounded-full bg-[#eee7f8] opacity-70 blur-3xl" />

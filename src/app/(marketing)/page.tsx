@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
-import { JsonLd } from "@/components/seo/JsonLd";
 import { PLANS } from "@/lib/plans";
 import {
   SITE_ORIGIN,
   buildSoftwareApplicationJsonLd,
   buildWebSiteJsonLd,
+  serializeJsonLd,
 } from "@/lib/seo/structured-data";
 import { formatUsd } from "@/lib/utils";
 
@@ -114,8 +114,16 @@ export default function HomePage() {
 
   return (
     <>
-      <JsonLd data={webSiteLd} />
-      <JsonLd data={softwareLd} />
+      <script
+        type="application/ld+json"
+        // Static WebSite schema — developer-authored, not user input.
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(webSiteLd) }}
+      />
+      <script
+        type="application/ld+json"
+        // Static SoftwareApplication schema — developer-authored, not user input.
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(softwareLd) }}
+      />
       <main className="overflow-hidden bg-[#fcfbfe] text-foreground">
       {/* HERO */}
       <section
