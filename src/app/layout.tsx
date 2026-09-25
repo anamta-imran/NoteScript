@@ -39,22 +39,33 @@ const urdu = Noto_Nastaliq_Urdu({ subsets: ["arabic"], variable: "--font-urdu", 
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.APP_URL || "http://localhost:3000"),
+  applicationName: "NoteScript",
   title: {
-    default: "NoteScript — Handwritten study notes from your material",
+    default: "NoteScript — Handwritten Study Notes from PDFs, Lectures & Text",
     template: "%s · NoteScript",
   },
   description:
-    "Turn text, lectures, PDFs, and images into structured handwritten-style study notes with rule-based formatting. No generative AI.",
+    "Turn text, PDFs, images, and lecture material into structured handwritten-style study notes. Built for students — organized pages, diagrams, and clearer revision without generative AI.",
   openGraph: {
-    title: "NoteScript — Handwritten study notes from your material",
+    title: "NoteScript — Handwritten Study Notes from PDFs, Lectures & Text",
     description:
-      "Study material in. Beautiful handwritten notes out. Text, YouTube transcripts, PDFs, and images.",
+      "Turn text, PDFs, images, and lecture material into structured handwritten-style study notes. Built for students — organized pages, diagrams, and clearer revision without generative AI.",
     type: "website",
+    siteName: "NoteScript",
+    url: "/",
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "NoteScript — Handwritten Study Notes from PDFs, Lectures & Text",
+    description:
+      "Turn text, PDFs, images, and lecture material into structured handwritten-style study notes. Built for students — organized pages, diagrams, and clearer revision without generative AI.",
   },
   verification: {
     google: "Daimksw0fDa7mjOdKJkYy-L7w6tdpD4iGU269zFjjco",
   },
-  // Favicon + Apple icon: src/app/icon.png and src/app/apple-icon.png (NoteScript brand).
+  // Favicon + Apple icon: src/app/icon.png and src/app/apple-icon.png (NoteScript brand mark).
+  // Social preview: src/app/opengraph-image.tsx + twitter-image.tsx (1200×630).
   // Old default favicon.ico removed — do not reference /favicon.ico.
 };
 

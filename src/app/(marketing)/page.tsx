@@ -1,26 +1,40 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
+import { JsonLd } from "@/components/seo/JsonLd";
 import { PLANS } from "@/lib/plans";
+import {
+  SITE_ORIGIN,
+  buildSoftwareApplicationJsonLd,
+  buildWebSiteJsonLd,
+} from "@/lib/seo/structured-data";
 import { formatUsd } from "@/lib/utils";
+
+const SITE_URL = `${SITE_ORIGIN}/`;
+
+const HOME_DESCRIPTION =
+  "Turn text, PDFs, images, and lecture material into structured handwritten-style study notes. Built for students — organized pages, diagrams, and clearer revision without generative AI.";
+
+const SOFTWARE_DESCRIPTION =
+  "NoteScript is a student-focused web application that turns study material — text, PDFs, images, and lectures — into structured handwritten-style study notes with rule-based formatting (not generative AI).";
 
 const steps = [
   {
     number: "01",
     title: "Add your material",
     description:
-      "Upload a PDF, paste your text, or bring in the content you already study from.",
+      "Paste text, upload a PDF, add an image, or bring in lecture and YouTube material you already study from.",
   },
   {
     number: "02",
     title: "Let NoteScript organize it",
     description:
-      "Your material is transformed into clean, structured notes that are easier to scan and understand.",
+      "Your study material is turned into structured handwritten-style notes that are easier to scan and revise.",
   },
   {
     number: "03",
     title: "Study with less effort",
     description:
-      "Review beautifully organized notes, key points, diagrams, and summaries in one focused workspace.",
+      "Review key points, diagrams, and summaries in one focused workspace built for handwritten study notes.",
   },
 ];
 
@@ -28,22 +42,22 @@ const features = [
   {
     title: "Handwritten feel",
     description:
-      "Turn plain study material into notes with a natural handwritten aesthetic.",
+      "Turn study material into notes with a natural handwritten aesthetic students actually want to revise from.",
   },
   {
     title: "Smart structure",
     description:
-      "Keep headings, key points, sections, and important information visually organized.",
+      "Keep headings, key points, sections, and important information visually organized — including PDF to notes workflows.",
   },
   {
     title: "Visual learning",
     description:
-      "Make complicated topics easier to understand with clean visual layouts and diagrams.",
+      "Make complicated topics and lecture notes easier to understand with clean layouts and diagrams.",
   },
   {
     title: "One focused workspace",
     description:
-      "Keep your generated notes organized instead of jumping between different tools.",
+      "Keep your notes organized in one place instead of jumping between different study tools.",
   },
 ];
 
@@ -71,9 +85,38 @@ const faqs = [
 ];
 
 export default function HomePage() {
-  
+  const webSiteLd = buildWebSiteJsonLd({
+    name: "NoteScript",
+    alternateName: "NoteScript",
+    url: SITE_URL,
+    description: HOME_DESCRIPTION,
+  });
+
+  const softwareLd = buildSoftwareApplicationJsonLd({
+    name: "NoteScript",
+    url: SITE_URL,
+    description: SOFTWARE_DESCRIPTION,
+    offers: [
+      {
+        name: PLANS.free.name,
+        price: PLANS.free.monthlyPriceUsd,
+      },
+      {
+        name: PLANS.student.name,
+        price: PLANS.student.monthlyPriceUsd,
+      },
+      {
+        name: PLANS.pro.name,
+        price: PLANS.pro.monthlyPriceUsd,
+      },
+    ],
+  });
+
   return (
-    <main className="overflow-hidden bg-[#fcfbfe] text-foreground">
+    <>
+      <JsonLd data={webSiteLd} />
+      <JsonLd data={softwareLd} />
+      <main className="overflow-hidden bg-[#fcfbfe] text-foreground">
       {/* HERO */}
       <section
         className="relative border-b border-line"
@@ -87,20 +130,20 @@ export default function HomePage() {
           <div className="max-w-xl">
             <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-line bg-white/80 px-3 py-1.5 text-xs font-medium text-muted shadow-sm backdrop-blur">
               <span className="h-1.5 w-1.5 rounded-full bg-lavender-deep" />
-              Beautiful notes. Better studying.
+              Built for students
             </div>
 
             <h1 className="max-w-xl text-4xl font-semibold tracking-[-0.04em] text-foreground sm:text-5xl lg:text-[3.7rem] lg:leading-[1.04]">
-              Notes that feel
+              Handwritten-style study notes
               <span className="block font-hand-clean text-lavender-deep">
-                beautifully yours.
+                from your material.
               </span>
             </h1>
 
             <p className="mt-5 max-w-lg text-base leading-7 text-muted sm:text-lg">
-              Turn your study material into clean, organized notes with a
-              beautiful handwritten feel — without spending hours formatting
-              everything yourself.
+              Turn text, PDFs, images, and lectures or YouTube material into
+              structured handwritten-style study notes. Formatting is rule-based,
+              not generative AI — so your pages stay clear and predictable.
             </p>
 
             <div className="mt-7 flex flex-col gap-3 sm:flex-row">
@@ -165,9 +208,9 @@ export default function HomePage() {
                 </div>
 
                 <div className="mt-7 border-t border-dashed border-[#ddd6e7] pt-6">
-                  <h3 className="font-hand-class text-2xl text-[#40384b]">
+                  <p className="font-hand-class text-2xl text-[#40384b]">
                     Make learning feel lighter.
-                  </h3>
+                  </p>
 
                   <p className="mt-3 text-sm leading-6 text-[#756d7d]">
                     Clear structure helps you find the important parts faster,
@@ -242,16 +285,17 @@ export default function HomePage() {
             </p>
 
             <h2 className="mt-3 text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">
-              From messy material to
+              From study material to
               <span className="font-hand-clean text-lavender-deep">
                 {" "}
-                beautiful notes.
+                handwritten notes.
               </span>
             </h2>
 
             <p className="mt-4 max-w-xl text-sm leading-6 text-muted sm:text-base">
-              A simple workflow designed to remove the boring part of
-              note-taking while keeping you in control of what you learn.
+              A simple workflow for turning the material you already have into
+              notes you can actually study from — without rebuilding everything
+              by hand.
             </p>
           </div>
 
@@ -295,10 +339,18 @@ export default function HomePage() {
               </h2>
             </div>
 
-            <p className="max-w-sm text-sm leading-6 text-muted">
-              NoteScript keeps the interface calm and focused so your notes
-              remain the main character.
-            </p>
+            <div className="max-w-sm">
+              <p className="text-sm leading-6 text-muted">
+                NoteScript keeps the interface calm and focused so your notes
+                remain the main character.
+              </p>
+              <Link
+                href="/features"
+                className="mt-4 inline-flex text-sm font-semibold text-lavender-deep hover:underline"
+              >
+                Explore features
+              </Link>
+            </div>
           </div>
 
           <div className="mt-12 grid gap-px overflow-hidden rounded-2xl border border-line bg-line md:grid-cols-2">
@@ -409,7 +461,13 @@ export default function HomePage() {
       </h2>
 
       <p className="mt-4 text-sm leading-6 text-muted">
-        Choose the plan that fits your study workflow.
+        Choose the plan that fits your study workflow.{" "}
+        <Link
+          href="/pricing"
+          className="font-semibold text-lavender-deep hover:underline"
+        >
+          Compare plans
+        </Link>
       </p>
     </div>
 
@@ -525,6 +583,16 @@ export default function HomePage() {
               </details>
             ))}
           </div>
+
+          <p className="mt-6 text-center text-sm text-muted">
+            Looking for more detail?{" "}
+            <Link
+              href="/faq"
+              className="font-semibold text-lavender-deep hover:underline"
+            >
+              Read the full FAQ
+            </Link>
+          </p>
         </div>
       </section>
 
@@ -554,5 +622,6 @@ export default function HomePage() {
         </div>
       </section>
     </main>
+    </>
   );
 }
