@@ -1,8 +1,12 @@
 import type { Metadata } from "next";
+import { buildMarketingMetadata } from "@/lib/seo/marketing-metadata";
 
-export const metadata: Metadata = {
-  title: "Privacy",
-};
+export const metadata: Metadata = buildMarketingMetadata({
+  title: "Privacy Policy — NoteScript",
+  description:
+    "Read the NoteScript Privacy Policy to understand how account information, uploaded material, and website data are handled.",
+  path: "/privacy",
+});
 
 export default function PrivacyPage() {
   return (

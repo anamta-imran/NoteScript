@@ -1,6 +1,8 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { PLANS } from "@/lib/plans";
+import { buildMarketingMetadata } from "@/lib/seo/marketing-metadata";
 import {
   SITE_ORIGIN,
   buildSoftwareApplicationJsonLd,
@@ -12,7 +14,13 @@ import { formatUsd } from "@/lib/utils";
 const SITE_URL = `${SITE_ORIGIN}/`;
 
 const HOME_DESCRIPTION =
-  "Turn text, PDFs, images, and lecture material into structured handwritten-style study notes. Built for students — organized pages, diagrams, and clearer revision without generative AI.";
+  "Create handwritten-style study notes from text, PDFs, images, and lectures. NoteScript is a student notes maker with rule-based formatting — not generative AI.";
+
+export const metadata: Metadata = buildMarketingMetadata({
+  title: "NoteScript — Handwritten Study Notes Maker for Students",
+  description: HOME_DESCRIPTION,
+  path: "/",
+});
 
 const SOFTWARE_DESCRIPTION =
   "NoteScript is a student-focused web application that turns study material — text, PDFs, images, and lectures — into structured handwritten-style study notes with rule-based formatting (not generative AI).";
@@ -296,14 +304,14 @@ export default function HomePage() {
               From study material to
               <span className="font-hand-clean text-lavender-deep">
                 {" "}
-                handwritten notes.
+                handwritten study notes.
               </span>
             </h2>
 
             <p className="mt-4 max-w-xl text-sm leading-6 text-muted sm:text-base">
-              A simple workflow for turning the material you already have into
-              notes you can actually study from — without rebuilding everything
-              by hand.
+              A simple handwritten notes maker workflow for turning the material
+              you already have into notes you can actually study from — without
+              rebuilding everything by hand.
             </p>
           </div>
 
@@ -330,8 +338,85 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* FEATURES */}
+      {/* SOURCE GUIDES */}
       <section className="border-y border-line bg-white py-20 sm:py-24">
+        <div className="mx-auto max-w-6xl px-5 sm:px-8 lg:px-10">
+          <div className="max-w-2xl">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-lavender-deep">
+              Create notes from any source
+            </p>
+            <h2 className="mt-3 text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">
+              A handwritten notes maker for
+              <span className="font-hand-clean text-lavender-deep">
+                {" "}
+                real study material.
+              </span>
+            </h2>
+            <p className="mt-4 max-w-xl text-sm leading-6 text-muted sm:text-base">
+              Choose the path that matches what you already have — text, PDFs,
+              images, or YouTube lectures — and create structured handwritten-style
+              study notes.
+            </p>
+          </div>
+
+          <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {[
+              {
+                href: "/text-to-handwritten-notes",
+                title: "Text to handwritten notes",
+                description:
+                  "Paste typed lecture notes or drafts and turn them into structured study pages.",
+              },
+              {
+                href: "/pdf-to-handwritten-notes",
+                title: "PDF to handwritten notes",
+                description:
+                  "Extract selectable PDF text into handwritten-style notes for revision.",
+              },
+              {
+                href: "/image-to-handwritten-notes",
+                title: "Image to handwritten notes",
+                description:
+                  "Use OCR to convert photographed pages into editable study notes.",
+              },
+              {
+                href: "/youtube-to-handwritten-notes",
+                title: "YouTube lectures to notes",
+                description:
+                  "Turn public lecture captions into structured handwritten-style notes on Pro.",
+              },
+              {
+                href: "/handwritten-notes-maker",
+                title: "Handwritten notes maker",
+                description:
+                  "See how NoteScript works as a full study notes maker for students.",
+              },
+              {
+                href: "/features",
+                title: "All features",
+                description:
+                  "Explore sources, handwriting styles, diagrams, folders, and exports.",
+              },
+            ].map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="rounded-2xl border border-line bg-[#fcfbfe] p-6 transition hover:-translate-y-0.5 hover:border-lavender-deep/30 hover:shadow-sm"
+              >
+                <h3 className="text-lg font-semibold text-foreground">
+                  {item.title}
+                </h3>
+                <p className="mt-2 text-sm leading-6 text-muted">
+                  {item.description}
+                </p>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FEATURES */}
+      <section className="py-20 sm:py-24">
         <div className="mx-auto max-w-6xl px-5 sm:px-8 lg:px-10">
           <div className="flex flex-col justify-between gap-5 md:flex-row md:items-end">
             <div className="max-w-2xl">

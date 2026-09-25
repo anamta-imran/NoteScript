@@ -2,17 +2,21 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/Button";
+import { buildMarketingMetadata } from "@/lib/seo/marketing-metadata";
 
-export const metadata: Metadata = {
-  title: "Features",
+export const metadata: Metadata = buildMarketingMetadata({
+  title: "Features — Handwritten Study Notes Tools | NoteScript",
   description:
-    "Turn text, YouTube captions, PDFs, and images into beautifully organized notes with NoteScript.",
-};
+    "Create handwritten-style study notes from text, PDFs, images, and lectures with structured formatting, diagrams, highlights, and student-focused tools.",
+  path: "/features",
+});
 
 const features = [
   {
     number: "01",
     title: "Text → Notes",
+    href: "/text-to-handwritten-notes",
+    linkLabel: "Text to handwritten notes",
     description:
       "Turn raw study material into structured notes with clear sections and useful formatting.",
     points: [
@@ -51,6 +55,8 @@ const features = [
   {
     number: "02",
     title: "YouTube → Notes",
+    href: "/youtube-to-handwritten-notes",
+    linkLabel: "YouTube to handwritten notes",
     description:
       "Use public YouTube captions as a source and turn them into notes through the same formatting workflow.",
     points: [
@@ -93,6 +99,8 @@ const features = [
   {
     number: "03",
     title: "PDF → Notes",
+    href: "/pdf-to-handwritten-notes",
+    linkLabel: "PDF to handwritten notes",
     description:
       "Extract selectable text from PDFs and move it into the same organized note workflow.",
     points: [
@@ -131,6 +139,8 @@ const features = [
   {
     number: "04",
     title: "Images → Notes",
+    href: "/image-to-handwritten-notes",
+    linkLabel: "Image to handwritten notes",
     description:
       "Extract text from images with OCR, edit the extracted content, and send it through the same note engine.",
     points: [
@@ -358,6 +368,13 @@ export default function FeaturesPage() {
                   <p className="mt-4 max-w-lg text-sm leading-6 text-muted sm:text-base">
                     {feature.description}
                   </p>
+
+                  <Link
+                    href={feature.href}
+                    className="mt-4 inline-flex text-sm font-semibold text-lavender-deep hover:underline"
+                  >
+                    {feature.linkLabel}
+                  </Link>
 
                   <ul className="mt-6 grid gap-3 sm:grid-cols-2">
                     {feature.points.map((point) => (

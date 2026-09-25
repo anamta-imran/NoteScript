@@ -1,22 +1,19 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { buildMarketingMetadata } from "@/lib/seo/marketing-metadata";
 import {
   buildFaqPageJsonLd,
   serializeJsonLd,
   type FaqItem,
 } from "@/lib/seo/structured-data";
 
-export const metadata: Metadata = {
-  title: {
-    absolute: "FAQ — NoteScript Study Notes",
-  },
+export const metadata: Metadata = buildMarketingMetadata({
+  title: "FAQ — NoteScript Study Notes",
   description:
     "Answers about handwritten study notes, PDF to notes, lecture and YouTube notes, image OCR, templates, plans, and how NoteScript works.",
-  alternates: {
-    canonical: "https://notescript-xi.vercel.app/faq",
-  },
-};
+  path: "/faq",
+});
 
 type FaqEntry = FaqItem & {
   /** Optional richer answer UI; must match the plain-text `answer` used for JSON-LD. */

@@ -2,12 +2,14 @@ import { Button } from "@/components/ui/Button";
 import type { Metadata } from "next";
 
 import { HANDWRITING_THEMES } from "@/lib/engine/handwritingThemes";
+import { buildMarketingMetadata } from "@/lib/seo/marketing-metadata";
 
-export const metadata: Metadata = {
-  title: "Templates",
+export const metadata: Metadata = buildMarketingMetadata({
+  title: "Study Note Templates — NoteScript",
   description:
-    "Handwriting styles and diagram templates used by NoteScript.",
-};
+    "Explore NoteScript study note templates designed for clear, structured, handwritten-style revision notes.",
+  path: "/templates",
+});
 
 const diagramTemplates = [
   {

@@ -9,6 +9,17 @@ export type FaqItem = {
   answer: string;
 };
 
+export type BreadcrumbItem = {
+  name: string;
+  path: string;
+};
+
+/** Absolute public URL for a site path (`/` → trailing slash). */
+export function absoluteUrl(path: string): string {
+  if (path === "/" || path === "") return `${SITE_ORIGIN}/`;
+  return `${SITE_ORIGIN}${path.startsWith("/") ? path : `/${path}`}`;
+}
+
 export function buildWebSiteJsonLd(input: {
   name: string;
   url: string;
@@ -73,6 +84,19 @@ export function buildFaqPageJsonLd(faqs: FaqItem[]) {
         "@type": "Answer",
         text: faq.answer,
       },
+    })),
+  };
+}
+
+export function buildBreadcrumbJsonLd(items: BreadcrumbItem[]) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: items.map((item, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: item.name,
+      item: absoluteUrl(item.path),
     })),
   };
 }

@@ -46,7 +46,7 @@ export function MarketingHeader() {
 export function MarketingFooter() {
   return (
     <footer className="no-print border-t border-line bg-white/50">
-      <div className="mx-auto grid max-w-6xl gap-8 px-4 py-12 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mx-auto grid max-w-6xl gap-8 px-4 py-12 sm:grid-cols-2 lg:grid-cols-5">
         <div>
           <p className="font-hand-clean text-2xl text-lavender-deep">NoteScript</p>
           <p className="mt-2 text-sm text-muted">
@@ -61,6 +61,16 @@ export function MarketingFooter() {
               ["/how-it-works", "How it works"],
               ["/pricing", "Pricing"],
               ["/templates", "Templates"],
+              ["/handwritten-notes-maker", "Handwritten notes maker"],
+            ],
+          },
+          {
+            title: "Create notes",
+            items: [
+              ["/text-to-handwritten-notes", "Text to handwritten notes"],
+              ["/pdf-to-handwritten-notes", "PDF to handwritten notes"],
+              ["/image-to-handwritten-notes", "Image to handwritten notes"],
+              ["/youtube-to-handwritten-notes", "YouTube to handwritten notes"],
             ],
           },
           {

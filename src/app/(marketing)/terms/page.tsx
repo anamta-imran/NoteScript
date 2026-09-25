@@ -1,9 +1,13 @@
 import type { Metadata } from "next";
+import { buildMarketingMetadata } from "@/lib/seo/marketing-metadata";
 
-export const metadata: Metadata = {
-  title: "Terms",
-  robots: { index: true },
-};
+export const metadata: Metadata = buildMarketingMetadata({
+  title: "Terms of Service — NoteScript",
+  description:
+    "Read the NoteScript Terms of Service covering use of the platform, accounts, subscriptions, payments, and user responsibilities.",
+  path: "/terms",
+  index: true,
+});
 
 export default function TermsPage() {
   return (

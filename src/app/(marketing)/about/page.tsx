@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
+import { buildMarketingMetadata } from "@/lib/seo/marketing-metadata";
 
-export const metadata: Metadata = {
-  title: "About",
+export const metadata: Metadata = buildMarketingMetadata({
+  title: "About NoteScript — Study Notes for Students",
   description:
-    "NoteScript helps students turn study material into handwritten-style notes.",
-};
+    "Learn about NoteScript, a student-focused platform for turning study material into structured handwritten-style notes.",
+  path: "/about",
+});
 
 const values = [
   {

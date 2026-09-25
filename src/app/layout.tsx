@@ -41,15 +41,15 @@ export const metadata: Metadata = {
   metadataBase: new URL(process.env.APP_URL || "http://localhost:3000"),
   applicationName: "NoteScript",
   title: {
-    default: "NoteScript — Handwritten Study Notes from PDFs, Lectures & Text",
+    default: "NoteScript — Handwritten Study Notes Maker for Students",
     template: "%s · NoteScript",
   },
   description:
-    "Turn text, PDFs, images, and lecture material into structured handwritten-style study notes. Built for students — organized pages, diagrams, and clearer revision without generative AI.",
+    "Create handwritten-style study notes from text, PDFs, images, and lectures. NoteScript is a student notes maker with rule-based formatting — not generative AI.",
   openGraph: {
-    title: "NoteScript — Handwritten Study Notes from PDFs, Lectures & Text",
+    title: "NoteScript — Handwritten Study Notes Maker for Students",
     description:
-      "Turn text, PDFs, images, and lecture material into structured handwritten-style study notes. Built for students — organized pages, diagrams, and clearer revision without generative AI.",
+      "Create handwritten-style study notes from text, PDFs, images, and lectures. NoteScript is a student notes maker with rule-based formatting — not generative AI.",
     type: "website",
     siteName: "NoteScript",
     url: "/",
@@ -57,9 +57,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "NoteScript — Handwritten Study Notes from PDFs, Lectures & Text",
+    title: "NoteScript — Handwritten Study Notes Maker for Students",
     description:
-      "Turn text, PDFs, images, and lecture material into structured handwritten-style study notes. Built for students — organized pages, diagrams, and clearer revision without generative AI.",
+      "Create handwritten-style study notes from text, PDFs, images, and lectures. NoteScript is a student notes maker with rule-based formatting — not generative AI.",
   },
   verification: {
     google: "Daimksw0fDa7mjOdKJkYy-L7w6tdpD4iGU269zFjjco",

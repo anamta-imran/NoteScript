@@ -1,9 +1,13 @@
 import type { Metadata } from "next";
+import { buildMarketingMetadata } from "@/lib/seo/marketing-metadata";
 
-export const metadata: Metadata = {
-  title: "Refund Policy",
-  robots: { index: true },
-};
+export const metadata: Metadata = buildMarketingMetadata({
+  title: "Refund Policy — NoteScript",
+  description:
+    "Read the NoteScript Refund Policy covering subscription cancellations, refund eligibility, and payment-related terms.",
+  path: "/refund",
+  index: true,
+});
 
 export default function RefundPage() {
   return (

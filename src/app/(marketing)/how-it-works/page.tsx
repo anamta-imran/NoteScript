@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
 
 import { Button } from "@/components/ui/Button";
+import { buildMarketingMetadata } from "@/lib/seo/marketing-metadata";
 
-export const metadata: Metadata = {
-  title: "How it works",
+export const metadata: Metadata = buildMarketingMetadata({
+  title: "How NoteScript Works — Turn Study Material Into Notes",
   description:
-    "Extract, structure, paginate, and render handwritten-style study notes without generative AI.",
-};
+    "See how NoteScript turns your text, PDFs, images, and lectures into structured handwritten-style study notes for easier studying.",
+  path: "/how-it-works",
+});
 
 const steps = [
   {
